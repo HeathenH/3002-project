@@ -1,0 +1,2 @@
+python3 ./s1.py JunctionB 4003 2003 host1:2001
+python3 ./s1.py TerminalA 4001 2001 host1:2003

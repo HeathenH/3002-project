@@ -1,0 +1,20 @@
+TerminalA JunctionB
+JunctionB TerminalA StationD JunctionF
+BusportC JunctionF 
+StationD JunctionB TerminalE
+TerminalE StationD
+JunctionF JunctionB BusportC
+
+
+Diagram:
+
+        TerminalA
+           |
+           |
+     JunctionB --- JunctionF --- BusportC
+      /                 
+     /                             
+StationD                           
+     \                             
+      \                 
+      TerminalE      

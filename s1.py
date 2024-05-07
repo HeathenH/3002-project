@@ -189,7 +189,7 @@ class NetworkServer(multiprocessing.Process):
                         print(f"journey ended: {journey_list}")
                     else:
                         self.temp_list = json.loads(data.decode("utf-8"))
-                        self.journey = self.temp_list
+                        self.journey = copy.deepcopy(self.temp_list)
                         self.visited = self.temp_list[1]
                         for sublist in self.timetable[3:]:
                             time_in_sublist = sublist[0]  # set time

@@ -64,6 +64,8 @@ class NetworkServer(multiprocessing.Process):
             #print(f"station list: {self.station_list}")
             #print(f"station length: {len(self.station_list)}")
                 
+        # Code to check timetable, not working concurrently with the rest.
+        """
         while True:
             # Check for timetable file changes
             current_modified_time = os.stat(self.timetable_filename).st_mtime
@@ -75,12 +77,24 @@ class NetworkServer(multiprocessing.Process):
                 self.load_timetable()
                 print("Timetable updated")
             
-            time.sleep(5)  # Check every 5 seconds for changes
-                
+            time.sleep(1)  # Check every 1 second for changes
+        """  
         try:
             tcp_handler = multiprocessing.Process(target=self.handle_tcp)
             tcp_handler.start()
-            tcp_handler.join()
+            #tcp_handler.join()
+            while True:
+                # Check for timetable file changes
+                current_modified_time = os.stat(self.timetable_filename).st_mtime
+                #print(f"1: {current_modified_time}")
+                #print(f"2: {self.last_modified_time}")
+                if current_modified_time != self.last_modified_time:
+                    # Timetable file has changed
+                    self.last_modified_time = current_modified_time
+                    self.load_timetable()
+                    print("Timetable updated")
+                
+                time.sleep(1)  # Check every 1 second for changes
         except KeyboardInterrupt:
             pass
         finally:

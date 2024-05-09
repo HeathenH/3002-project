@@ -21,7 +21,7 @@ class NetworkServer(multiprocessing.Process):
         self.station_list_queue = multiprocessing.Queue()  # Queue for station list updates
         self.journey_list_queue = multiprocessing.Queue()
         self.destination = None
-        self.journey = [["odyssey", query_port, "destination"], [station_name]]
+        self.journey = [["odyssey", query_port, "destination"], [station_name], [query_port]]
         self.journey_list = []
         self.temp_list = []
         self.hard_temp = []
@@ -199,11 +199,11 @@ class NetworkServer(multiprocessing.Process):
                         response = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nConnection: Closed\r\n\r\n"
                         response += f"<html><body><h1>Journey from {self.station_name} to {self.destination}</h1>\n"
                         
-                        print(f"{self.journey_list}")
+                        #print(f"{self.journey_list}")
                         if self.journey_list == []:
                             response += f"<p>there is no journey from {self.station_name} to {self.destination} leaving after time-T today</p>"
                         else:
-                            for steps in self.journey_list[0][2:]:
+                            for steps in self.journey_list[0][3:]:
                                 response += f"<p>Catch {steps[1]} from {steps[2]}, at time {steps[0]}, to arrive at {steps[4]} at time {steps[3]}.</p>\n"
                             
                         response += f"<p>Final Journey's End: {self.journey_list}</p>"
@@ -253,15 +253,22 @@ class NetworkServer(multiprocessing.Process):
                 elif "odyssey" in data.decode("utf-8"):
                     
                     if "ended" in data.decode("utf-8") or "midnight" in data.decode("utf-8"):
+                    
                         journey_list = json.loads(data.decode("utf-8"))
-                        duration = datetime.strptime(journey_list[-1][3], "%H:%M") - datetime.strptime(journey_list[2][0], "%H:%M")
-                        print(f"duration: {duration}")
-                        journey_list[1].append(duration)
-                        self.journey_list = []
-                        print(f"before appending: {self.journey_list}")
-                        self.journey_list.append(journey_list)
-                        self.journey_list_queue.put(self.journey_list)
-                        #print(f"journey ended: {self.journey_list}")
+                        print(f"current journey_list{journey_list}")
+                        if len(journey_list[2]) > 1:
+                            journey_list[2].pop(-1)
+                            port_number = int(journey_list[2][-1])
+                            journey_data = journey_list
+                            address = ("127.0.0.1", port_number)
+                            self.udp_socket.sendto(json.dumps(journey_data).encode("utf-8"), address)
+                        else:
+                            self.journey_list = []
+                            print(f"ports: {journey_list[2]}")
+                            print(f"before appending: {self.journey_list}")
+                            self.journey_list.append(journey_list)
+                            self.journey_list_queue.put(self.journey_list)
+                            #print(f"journey ended: {self.journey_list}")
                         
                     else:
                         self.temp_list = json.loads(data.decode("utf-8"))
@@ -288,13 +295,13 @@ class NetworkServer(multiprocessing.Process):
                                     self.temp_list[1].append(sublist[-1])
                                     self.counter = 0
                                     
-                                    print(f"current udp list {self.temp_list}")
+                                    #print(f"current udp list {self.temp_list}")
                                     if self.temp_list[-1][-1] == self.temp_list[0][2]: # Compare latest journey, end journey if match
                                         self.temp_list[0].append("ended")
                                         print(f"journey ended {self.temp_list[-1][-1]}")
                                         print(f"journey ended {self.temp_list[0][2]}")
                                         journey_data = self.temp_list
-                                        port_number = int(self.temp_list[0][1])
+                                        port_number = int(self.temp_list[2][-1])
                                         address = ("127.0.0.1", port_number)
                                         self.udp_socket.sendto(json.dumps(journey_data).encode("utf-8"), address)
                                         self.visited.append(self.temp_list[-1][-1])
@@ -306,6 +313,7 @@ class NetworkServer(multiprocessing.Process):
                                             port_number = port[1]
                                             print(f"attempt to send {self.temp_list} to {station_name}")
                                             if station_name == self.temp_list[-1][-1]:
+                                                self.temp_list[2].append(self.query_port)
                                                 journey_data = self.temp_list
                                                 adjacent_addr = ("127.0.0.1", port_number)
                                                 self.udp_socket.sendto(json.dumps(journey_data).encode("utf-8"), adjacent_addr)
@@ -350,4 +358,5 @@ if __name__ == "__main__":
     server = NetworkServer(station_name, browser_port, query_port, adjacent_ports)
     server.start()
     server.join()
+
 

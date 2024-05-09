@@ -61,7 +61,7 @@ class NetworkServer(multiprocessing.Process):
 
             if not self.station_list_queue.empty():
                 self.station_list = self.station_list_queue.get()
-            #print(f"station list: {self.station_list}")
+            print(f"station list: {self.station_list}")
             #print(f"station length: {len(self.station_list)}")
                 
         # Code to check timetable, not working concurrently with the rest.
@@ -358,5 +358,6 @@ if __name__ == "__main__":
     server = NetworkServer(station_name, browser_port, query_port, adjacent_ports)
     server.start()
     server.join()
+
 
 

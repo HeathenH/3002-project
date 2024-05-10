@@ -25,7 +25,7 @@ class NetworkServer(multiprocessing.Process):
         self.journey_list = []
         self.temp_list = []
         self.hard_temp = []
-        self.start_time = "20:00"
+        self.start_time = "9:00"
         self.visited = [station_name]
         self.counter = 0
         self.last_modified_time = 0
@@ -150,30 +150,35 @@ class NetworkServer(multiprocessing.Process):
                         print("end of timetable")
                         while len(journey_list) < 1:
                             time.sleep(2)
-                            if not self.journey_list_queue.empty():
-                                journey_list = self.journey_list_queue.get()
+                            while not self.journey_list_queue.empty():
+                                journey_list.append(self.journey_list_queue.get())
+                                print(f"final Journeys End: {journey_list}")
                                 
-                        print(f"final Journeys End: {journey_list}")
+                        #print(f"final Journeys End: {journey_list}")
                         
                         # If more than one journey returned, find the fastest journey, taking into account midnights
                         # 10+ servers scenario handler
                         # wrong logic, redo it, just compare the latest time of arrival in the final destination
                         if len(journey_list) > 1:
+                            print("more than 1 detected")
                             valid = []
                             for journ in journey_list:
-                                if journ[0][-1] == "midnight":
+                                #print(journ[0][0][-1])
+                                if journ[0][0][-1] == "midnight":
                                     continue
                                 else:
                                     valid.append(journ)
                                     
-                                    break
                             if valid == []:
                                 # All journey returned are past midnight
                                 journey_list = []
                             else:
-                                endtime = valid[0][-1][3]
+                                endtime = valid[0][0][-1][3]
+                                shortest = valid[0]
                                 for journey in valid:
-                                    duration = journey[-1][3]
+                                    duration = journey[0][-1][3]
+                                    print(f"duration: {duration}")
+                                    print(f"endtime: {endtime}")
                                     if datetime.strptime(duration, "%H:%M") < datetime.strptime(endtime, "%H:%M"):
                                         endtime = duration
                                         shortest = journey
@@ -245,7 +250,7 @@ class NetworkServer(multiprocessing.Process):
                     if "ended" in data.decode("utf-8") or "midnight" in data.decode("utf-8"):
                     
                         journey_list = json.loads(data.decode("utf-8"))
-                        print(f"current journey_list{journey_list}")
+                        #print(f"current journey_list{journey_list}")
                         if len(journey_list[2]) > 1:
                             journey_list[2].pop(-1)
                             port_number = int(journey_list[2][-1])
@@ -253,11 +258,13 @@ class NetworkServer(multiprocessing.Process):
                             address = ("127.0.0.1", port_number)
                             self.udp_socket.sendto(json.dumps(journey_data).encode("utf-8"), address)
                         else:
+                            print("end pinged")
                             self.journey_list = []
-                            print(f"ports: {journey_list[2]}")
-                            print(f"before appending: {self.journey_list}")
+                            #print(f"ports: {journey_list[2]}")
+                            #print(f"before appending: {self.journey_list}")
                             self.journey_list.append(journey_list)
                             self.journey_list_queue.put(self.journey_list)
+                            print(self.journey_list)
                             #print(f"journey ended: {self.journey_list}")
                         
                     else:

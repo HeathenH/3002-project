@@ -25,7 +25,7 @@ class NetworkServer(multiprocessing.Process):
         self.journey_list = []
         self.temp_list = []
         self.hard_temp = []
-        self.start_time = "9:00"
+        self.start_time = "20:00"
         self.visited = [station_name]
         self.counter = 0
         self.last_modified_time = 0
@@ -64,21 +64,7 @@ class NetworkServer(multiprocessing.Process):
             print(f"station list: {self.station_list}")
             #print(f"station length: {len(self.station_list)}")
                 
-        # Code to check timetable, not working concurrently with the rest.
-        """
-        while True:
-            # Check for timetable file changes
-            current_modified_time = os.stat(self.timetable_filename).st_mtime
-            #print(f"1: {current_modified_time}")
-            #print(f"2: {self.last_modified_time}")
-            if current_modified_time != self.last_modified_time:
-                # Timetable file has changed
-                self.last_modified_time = current_modified_time
-                self.load_timetable()
-                print("Timetable updated")
-            
-            time.sleep(1)  # Check every 1 second for changes
-        """  
+        
         try:
             tcp_handler = multiprocessing.Process(target=self.handle_tcp)
             tcp_handler.start()
@@ -114,6 +100,8 @@ class NetworkServer(multiprocessing.Process):
                         self.journey[0][2] = self.destination
                         self.hard_temp = copy.deepcopy(self.journey)
                         #print(f"true origin: {self.hard_temp}")
+                        journey_list = []
+
                         
                         # Start linear search of the time from the timetable from the 4th item
                         for sublist in self.timetable[3:]:
@@ -140,6 +128,7 @@ class NetworkServer(multiprocessing.Process):
                                         self.journey_list.append(self.journey)
                                         print("Instant Journey's end")
                                         print(self.journey_list)
+                                        journey_list.append(self.journey)
                                         self.journey = self.hard_temp
                                         break
                                     else:
@@ -159,57 +148,58 @@ class NetworkServer(multiprocessing.Process):
                                                 self.journey = self.hard_temp
 
                         print("end of timetable")
-                        
-                        while len(self.journey_list) < 1:
+                        while len(journey_list) < 1:
                             time.sleep(2)
                             if not self.journey_list_queue.empty():
-                                self.journey_list = self.journey_list_queue.get()
+                                journey_list = self.journey_list_queue.get()
                                 
-                        print(f"final Journeys End: {self.journey_list}")
+                        print(f"final Journeys End: {journey_list}")
                         
                         # If more than one journey returned, find the fastest journey, taking into account midnights
                         # 10+ servers scenario handler
                         # wrong logic, redo it, just compare the latest time of arrival in the final destination
-                        if len(self.journey_list) > 1:
-                            shortest= []
-                            total = 0
-                            for journ in self.journey_list:
+                        if len(journey_list) > 1:
+                            valid = []
+                            for journ in journey_list:
                                 if journ[0][-1] == "midnight":
                                     continue
                                 else:
-                                    shortest = journ
-                                    total = journ[1][-1]
+                                    valid.append(journ)
+                                    
                                     break
-                            if total == 0:
+                            if valid == []:
                                 # All journey returned are past midnight
-                                self.journey_list = []
+                                journey_list = []
                             else:
-                                for journey in self.journey_list:
-                                    duration = journey[1][-1]
-                                    if duration < total:
-                                        total = journey[0][-1]
+                                endtime = valid[0][-1][3]
+                                for journey in valid:
+                                    duration = journey[-1][3]
+                                    if datetime.strptime(duration, "%H:%M") < datetime.strptime(endtime, "%H:%M"):
+                                        endtime = duration
                                         shortest = journey
+                                        
                                     else:
                                         continue
-                                self.journey_list = shortest
+                                journey_list = shortest
                         
-                        
+                        if journey_list[0][0][-1] == "midnight":
+                            journey_list = []
 
                         # Handle TCP request
                         response = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nConnection: Closed\r\n\r\n"
-                        response += f"<html><body><h1>Journey from {self.station_name} to {self.destination}</h1>\n"
+                        response += f"<html><body><h1>Journey from {self.station_name} to {self.destination} at {self.start_time}</h1>\n"
                         
                         #print(f"{self.journey_list}")
-                        if self.journey_list == []:
-                            response += f"<p>there is no journey from {self.station_name} to {self.destination} leaving after time-T today</p>"
+                        if journey_list == []:
+                            response += f"<p>there is no journey from {self.station_name} to {self.destination} leaving after {self.start_time} today</p>"
                         else:
-                            for steps in self.journey_list[0][3:]:
+                            for steps in journey_list[0][3:]:
                                 response += f"<p>Catch {steps[1]} from {steps[2]}, at time {steps[0]}, to arrive at {steps[4]} at time {steps[3]}.</p>\n"
                             
-                        response += f"<p>Final Journey's End: {self.journey_list}</p>"
+                        #response += f"<p>Final Journey's End: {journey_list}</p>"
                         response += "</body></html>"
                         tcp_conn.sendall(response.encode("utf-8"))
-                        self.journey_list = []
+                        journey_list = []
                         #print(f"journey list emptied: {self.journey_list}")
                         #print(f"Initial journey list queue size: {self.journey_list_queue.qsize()}")
                         while not self.journey_list_queue.empty():
@@ -327,7 +317,7 @@ class NetworkServer(multiprocessing.Process):
                             print("midnight")
                             self.temp_list[0].append("midnight")
                             journey_data = self.temp_list
-                            port_number = int(self.temp_list[0][1])
+                            port_number = int(self.temp_list[2][-1])
                             address = ("127.0.0.1", port_number)
                             self.udp_socket.sendto(json.dumps(journey_data).encode("utf-8"), address)
                         

@@ -1,7 +1,8 @@
-6 servers
-python3 ./s3.py TerminalA 4001 2001 host1:2003
-python3 ./s3.py JunctionB 4003 2003 host2:2001 host3:2007 host4:2011
-python3 ./s3.py BusportC 4005 2005 host5:2011
-python3 ./s3.py StationD 4007 2007 host6:2003 host7:2009
-python3 ./s3.py TerminalE 4009 2009 host8:2007
-python3 ./s3.py JunctionF 4011 2011 host9:2003 host10:2005
+#6 servers
+
+python3 ./station-server.py TerminalA 4001 2001 host1:2003
+python3 ./station-server.py JunctionB 4003 2003 host2:2001 host3:2007 host4:2011
+python3 ./station-server.py BusportC 4005 2005 host5:2011
+python3 ./station-server.py StationD 4007 2007 host6:2003 host7:2009
+python3 ./station-server.py TerminalE 4009 2009 host8:2007
+python3 ./station-server.py JunctionF 4011 2011 host9:2003 host10:2005

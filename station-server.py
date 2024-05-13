@@ -7,6 +7,11 @@ from datetime import datetime
 import copy
 import os
 
+# Harrison Harun | 23347644
+# Aarif Lamat | 23628374
+# Enrico Tionandra | 23732436
+# Nicholas Mulyawan | 23044774
+
 class NetworkServer(multiprocessing.Process):
     def __init__(self, station_name, browser_port, query_port, adjacent_ports):
         super().__init__()
@@ -62,7 +67,6 @@ class NetworkServer(multiprocessing.Process):
             if not self.station_list_queue.empty():
                 self.station_list = self.station_list_queue.get()
             print(f"station list: {self.station_list}")
-            #print(f"station length: {len(self.station_list)}")
                 
         
         try:
@@ -98,7 +102,6 @@ class NetworkServer(multiprocessing.Process):
                         self.destination = http_path.split("=")[1]
                         self.journey[0][2] = self.destination
                         self.hard_temp = copy.deepcopy(self.journey)
-                        #print(f"true origin: {self.hard_temp}")
                         journey_list = []
 
                         
@@ -109,7 +112,7 @@ class NetworkServer(multiprocessing.Process):
                             time_in_timetable_datetime = datetime.strptime(time_in_sublist, "%H:%M")
                             start_time_datetime = datetime.strptime(self.start_time, "%H:%M")
                             if time_in_timetable_datetime >= start_time_datetime: # Compare time
-                                for station in self.visited: #check for past station visited.
+                                for station in self.visited: # check for past station visited.
                                     if sublist[-1] == station:
                                         self.counter += 1
                                 if self.counter > 0: # If more than 0, it means the station has been visited before, resets counter
@@ -149,16 +152,14 @@ class NetworkServer(multiprocessing.Process):
                             time.sleep(2)
                             while not self.journey_list_queue.empty():
                                 journey_list.append(self.journey_list_queue.get())
-                                #print(f"final Journeys End: {journey_list}")
                                 
-                        print(f"final Journeys End: {journey_list}")
+                        #print(f"final Journeys End: {journey_list}")
                         
                         # If more than one journey returned, find the fastest journey, taking into account midnights
                         if len(journey_list) > 1:
                             print("more than 1 detected")
                             valid = []
                             for journ in journey_list:
-                                #print(journ[0][0][-1])
                                 if journ[0][0][-1] == "midnight":
                                     continue
                                 else:
@@ -238,7 +239,6 @@ class NetworkServer(multiprocessing.Process):
                     if "ended" in data.decode("utf-8") or "midnight" in data.decode("utf-8"):
                     
                         journey_list = json.loads(data.decode("utf-8"))
-                        #print(f"current journey_list{journey_list}")
                         if len(journey_list[2]) > 1:
                             journey_list[2].pop(-1)
                             port_number = int(journey_list[2][-1])
@@ -336,4 +336,5 @@ if __name__ == "__main__":
     server = NetworkServer(station_name, browser_port, query_port, adjacent_ports)
     server.start()
     server.join()
+
 

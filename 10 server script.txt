@@ -1,0 +1,25 @@
+python3 ./station-server.py TerminalA 4001 2001 host1:2015 & 
+python3 ./station-server.py JunctionB 4003 2003 host2:2009 host3:2015 & 
+python3 ./station-server.py BusportC 4005 2005 host4:2013 host5:2017 & 
+python3 ./station-server.py StationD 4007 2007 host6:2009 & 
+python3 ./station-server.py TerminalE 4009 2009 host7:2003 host8:2007 host9:2011 host10:2015 & 
+python3 ./station-server.py JunctionF 4011 2011 host11:2009 host12:2015 host13:2019 & 
+python3 ./station-server.py BusportG 4013 2013 host14:2005 host15:2019 & 
+python3 ./station-server.py StationH 4015 2015 host16:2001 host17:2003 host18:2009 host19:2011 host20:2019 & 
+python3 ./station-server.py TerminalI 4017 2017 host21:2005 host22:2019 & 
+python3 ./station-server.py JunctionJ 4019 2019 host23:2011 host24:2013 host25:2015 host26:2017
+
+pkill -f station-server.py
+
+python3 ./s1.py TerminalA 4001 2001 host1:2015 & 
+python3 ./s1.py JunctionB 4003 2003 host2:2009 host3:2015 & 
+python3 ./s1.py BusportC 4005 2005 host4:2013 host5:2017 & 
+python3 ./s1.py StationD 4007 2007 host6:2009 & 
+python3 ./s1.py TerminalE 4009 2009 host7:2003 host8:2007 host9:2011 host10:2015 & 
+python3 ./s1.py JunctionF 4011 2011 host11:2009 host12:2015 host13:2019 & 
+python3 ./s1.py BusportG 4013 2013 host14:2005 host15:2019 & 
+python3 ./s1.py StationH 4015 2015 host16:2001 host17:2003 host18:2009 host19:2011 host20:2019 & 
+python3 ./s1.py TerminalI 4017 2017 host21:2005 host22:2019 & 
+python3 ./s1.py JunctionJ 4019 2019 host23:2011 host24:2013 host25:2015 host26:2017
+
+pkill -f s1.py

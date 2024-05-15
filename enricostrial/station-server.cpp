@@ -13,6 +13,8 @@
 #include <cstdlib>
 #include <cstdio>
 #include <unistd.h>
+#include <cctype>
+#include <locale>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/stat.h>
@@ -135,127 +137,187 @@ private:
     vector<vector<string>> temp_list;
     mutex queue_mutex;
 
-    void handle_tcp() {
-        try {
-            while (true) {
-                sockaddr_in client_addr;
-                socklen_t client_len = sizeof(client_addr);
-                int client_socket = accept(tcp_socket, (sockaddr*)&client_addr, &client_len);
-                if (client_socket < 0) {
-                    cerr << "Error accepting connection" << endl;
-                    continue;
-                }
-                cout << "Accepted connection from " << inet_ntoa(client_addr.sin_addr) << ":" << ntohs(client_addr.sin_port) << endl;
+   void handle_tcp() {
+    try {
+        while (true) {
+            cout << "[DEBUG] Waiting to accept a new connection..." << endl;
 
-                char buffer[4096];
-                int bytes_received = recv(client_socket, buffer, sizeof(buffer), 0);
-                if (bytes_received < 0) {
-                    cerr << "Error reading from socket" << endl;
-                    close(client_socket);
-                    continue;
-                }
-                buffer[bytes_received] = '\0';
-                string request(buffer);
-                cout << "Received request: " << request << endl;
+            sockaddr_in client_addr;
+            socklen_t client_len = sizeof(client_addr);
+            int client_socket = accept(tcp_socket, (sockaddr*)&client_addr, &client_len);
+            if (client_socket < 0) {
+                cerr << "[ERROR] Error accepting connection" << endl;
+                continue;
+            }
+            cout << "[DEBUG] Accepted connection from " << inet_ntoa(client_addr.sin_addr) << ":" << ntohs(client_addr.sin_port) << endl;
 
-                stringstream ss(request);
-                string http_method, http_path, http_version;
-                ss >> http_method >> http_path >> http_version;
+            char buffer[4096];
+            int bytes_received = recv(client_socket, buffer, sizeof(buffer), 0);
+            if (bytes_received < 0) {
+                cerr << "[ERROR] Error reading from socket" << endl;
+                close(client_socket);
+                continue;
+            }
+            buffer[bytes_received] = '\0';
+            string request(buffer);
+            cout << "[DEBUG] Received request: " << request << endl;
 
-                if (http_method == "GET" && http_path.find("/?to=") != string::npos) {
-                    visited = { station_name };
-                    destination = http_path.substr(http_path.find("=") + 1);
-                    journey = { {"odyssey", to_string(query_port), destination}, {station_name}, {to_string(query_port)} };
-                    hard_temp = journey;
-                    journey_list.clear();
+            stringstream ss(request);
+            string http_method, http_path, http_version;
+            ss >> http_method >> http_path >> http_version;
 
-                    cout << "Processing journey from " << station_name << " to " << destination << endl;
+            cout << "[DEBUG] HTTP Method: " << http_method << ", HTTP Path: " << http_path << ", HTTP Version: " << http_version << endl;
 
-                    for (auto& sublist : timetable) {
-                        string time_in_sublist = sublist[0];
-                        auto time_in_timetable_datetime = parse_time(time_in_sublist);
-                        auto start_time_datetime = parse_time(start_time);
-                        if (time_in_timetable_datetime >= start_time_datetime) {
-                            if (find(visited.begin(), visited.end(), sublist.back()) != visited.end()) {
-                                continue;
-                            }
-                            journey.push_back(sublist);
-                            journey[1].push_back(sublist.back());
-                            if (journey.back().back() == destination) {
-                                journey[0].push_back("ended");
-                                journey_list.push_back(journey);
-                                journey = hard_temp;
-                                break;
-                            } else {
-                                for (auto& port : station_list) {
-                                    if (port[0] == journey.back().back()) {
-                                        string journey_data = serialize_journey(journey);
-                                        sockaddr_in adjacent_addr;
-                                        adjacent_addr.sin_family = AF_INET;
-                                        adjacent_addr.sin_port = htons(stoi(port[1]));
-                                        inet_pton(AF_INET, host_ip.c_str(), &adjacent_addr.sin_addr);
-                                        sendto(udp_socket, journey_data.c_str(), journey_data.size(), 0, (sockaddr*)&adjacent_addr, sizeof(adjacent_addr));
-                                        visited.push_back(port[0]);
-                                        journey = hard_temp;
-                                    }
+            if (http_method == "GET" && http_path.find("/?to=") != string::npos) {
+                visited = { station_name };
+                destination = http_path.substr(http_path.find("=") + 1);
+                trim(destination);  // Trim the destination
+                journey = { {"odyssey", to_string(query_port), destination}, {station_name}, {to_string(query_port)} };
+                hard_temp = journey;
+                journey_list.clear();
+
+                cout << "[DEBUG] Processing journey from " << station_name << " to " << destination << endl;
+
+                for (auto& sublist : timetable) {
+                    string time_in_sublist = sublist[0];
+                    auto time_in_timetable_datetime = parse_time(time_in_sublist);
+                    auto start_time_datetime = parse_time(start_time);
+
+                    cout << "[DEBUG] Checking timetable entry with time " << time_in_sublist << endl;
+
+                    if (time_in_timetable_datetime >= start_time_datetime) {
+                        cout << "[DEBUG] Entry is valid as it is after the start time" << endl;
+
+                        if (find(visited.begin(), visited.end(), sublist.back()) != visited.end()) {
+                            cout << "[DEBUG] Station " << sublist.back() << " already visited, skipping" << endl;
+                            continue;
+                        }
+
+                        journey.push_back(sublist);
+                        journey[1].push_back(sublist.back());
+
+                        // Add debugging output to compare journey.back().back() and destination
+                        string current_destination = journey.back().back();
+                        trim(current_destination);  // Trim the current destination
+                        cout << "[DEBUG] Comparing journey destination: " << current_destination << " with target destination: " << destination << endl;
+
+                        if (current_destination == destination) {
+                            cout << "[DEBUG] Destination " << destination << " reached" << endl;
+                            journey[0].push_back("ended");
+                            journey_list.push_back(journey);
+                            journey = hard_temp;
+                            break;
+                        } else {
+                            cout << "[DEBUG] Journey not yet completed, checking adjacent stations" << endl;
+
+                            for (auto& port : station_list) {
+                                if (port[0] == journey.back().back()) {
+                                    string journey_data = serialize_journey(journey);
+                                    sockaddr_in adjacent_addr;
+                                    adjacent_addr.sin_family = AF_INET;
+                                    adjacent_addr.sin_port = htons(stoi(port[1]));
+                                    inet_pton(AF_INET, host_ip.c_str(), &adjacent_addr.sin_addr);
+
+                                    cout << "[DEBUG] Sending journey data to adjacent station " << port[0] << " on port " << port[1] << endl;
+                                    sendto(udp_socket, journey_data.c_str(), journey_data.size(), 0, (sockaddr*)&adjacent_addr, sizeof(adjacent_addr));
+
+                                    visited.push_back(port[0]);
+                                    journey = hard_temp;
                                 }
                             }
                         }
                     }
-
-                    cout << "Waiting for journey completion..." << endl;
-                    while (true) {
-                        {
-                            lock_guard<mutex> lock(queue_mutex);
-                            while (!journey_list_queue.empty()) {
-                                journey_list.push_back(journey_list_queue.front());
-                                journey_list_queue.pop();
-                            }
-                        }
-                        if (!journey_list.empty()) break;
-                        this_thread::sleep_for(chrono::seconds(1));
-                    }
-
-                    if (journey_list.size() > 1) {
-                        auto shortest = *min_element(journey_list.begin(), journey_list.end(),
-                            [](const vector<vector<string>>& a, const vector<vector<string>>& b) {
-                                return parse_time(a[0].back()) < parse_time(b[0].back());
-                            });
-                        journey_list = { shortest };
-                    }
-
-                    cout << "Journey completed. Forming response..." << endl;
-
-                    string response = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nConnection: Closed\r\n\r\n";
-                    response += "<html><body><h1>Journey from " + station_name + " to " + destination + " at " + start_time + "</h1>\n";
-                    if (journey_list.empty()) {
-                        response += "<p>There is no journey from " + station_name + " to " + destination + " leaving after " + start_time + " today.</p>";
-                    } else {
-                        for (auto& step : journey_list[0]) {
-                            response += "<p>Catch " + step[1] + " from " + step[2] + ", at time " + step[0] + ", to arrive at " + step[4] + " at time " + step[3] + ".</p>\n";
-                        }
-                    }
-                    response += "</body></html>";
-
-                    cout << "Sending response: " << response << endl;
-
-                    send(client_socket, response.c_str(), response.size(), 0);
-                    journey_list.clear();
-                    lock_guard<mutex> lock(queue_mutex);
-                    while (!journey_list_queue.empty()) {
-                        journey_list_queue.pop();
-                    }
-                } else {
-                    string response = "HTTP/1.1 404 Not Found\r\nContent-Type: text/html\r\nConnection: Closed\r\n\r\n";
-                    response += "<html><body><h1>404 Not Found</h1></body></html>";
-                    send(client_socket, response.c_str(), response.size(), 0);
                 }
-                close(client_socket);
+
+                cout << "[DEBUG] Waiting for journey completion..." << endl;
+
+                while (true) {
+                    {
+                        lock_guard<mutex> lock(queue_mutex);
+                        cout << "[DEBUG] Lock acquired, checking journey_list_queue" << endl;
+
+                        while (!journey_list_queue.empty()) {
+                            journey_list.push_back(journey_list_queue.front());
+                            journey_list_queue.pop();
+                            cout << "[DEBUG] Journey added to journey_list" << endl;
+                        }
+                    }
+
+                    if (!journey_list.empty()) {
+                        cout << "[DEBUG] journey_list is not empty, breaking out of the loop" << endl;
+                        break;
+                    }
+
+                    cout << "[DEBUG] journey_list is still empty, sleeping for 1 second" << endl;
+                    this_thread::sleep_for(chrono::seconds(1));
+                }
+
+                if (journey_list.size() > 1) {
+                    cout << "[DEBUG] Multiple journeys found, selecting the shortest one" << endl;
+                    auto shortest = *min_element(journey_list.begin(), journey_list.end(),
+                        [](const vector<vector<string>>& a, const vector<vector<string>>& b) {
+                            return parse_time(a[0].back()) < parse_time(b[0].back());
+                        });
+                    journey_list = { shortest };
+                }
+
+                // Print the journey_list for debugging
+                print_journey_list(journey_list);
+
+                cout << "[DEBUG] Journey completed. Forming response..." << endl;
+
+                string response = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nConnection: Closed\r\n\r\n";
+                response += "<html><body><h1>Journey from " + station_name + " to " + destination + " at " + start_time + "</h1>\n";
+                if (journey_list.empty()) {
+                    response += "<p>There is no journey from " + station_name + " to " + destination + " leaving after " + start_time + " today.</p>";
+                } else {
+                    for (auto& step : journey_list[0]) {
+                        response += "<p>Catch " + step[1] + " from " + step[2] + ", at time " + step[0] + ", to arrive at " + step[4] + " at time " + step[3] + ".</p>\n";
+                    }
+                }
+                response += "</body></html>";
+
+                cout << "[DEBUG] Sending response: " << response << endl;
+
+                send(client_socket, response.c_str(), response.size(), 0);
+                journey_list.clear();
+                lock_guard<mutex> lock(queue_mutex);
+                while (!journey_list_queue.empty()) {
+                    journey_list_queue.pop();
+                }
+            } else {
+                string response = "HTTP/1.1 404 Not Found\r\nContent-Type: text/html\r\nConnection: Closed\r\n\r\n";
+                response += "<html><body><h1>404 Not Found</h1></body></html>";
+                send(client_socket, response.c_str(), response.size(), 0);
             }
-        } catch (const exception& e) {
-            cerr << "Error in handle_tcp: " << e.what() << endl;
+            close(client_socket);
+            cout << "[DEBUG] Connection closed" << endl;
         }
+    } catch (const exception& e) {
+        cerr << "[ERROR] Error in handle_tcp: " << e.what() << endl;
     }
+}
+
+
+// trim from start (in place)
+static inline void ltrim(std::string &s) {
+    s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch) {
+        return !std::isspace(ch);
+    }));
+}
+
+// trim from end (in place)
+static inline void rtrim(std::string &s) {
+    s.erase(std::find_if(s.rbegin(), s.rend(), [](unsigned char ch) {
+        return !std::isspace(ch);
+    }).base(), s.end());
+}
+
+// trim from both ends (in place)
+static inline void trim(std::string &s) {
+    ltrim(s);
+    rtrim(s);
+}
 
     void handle_udp() {
         try {
@@ -437,6 +499,20 @@ private:
             journey_data.push_back(journey_row);
         }
         return journey_data;
+    }
+
+    void print_journey_list(const vector<vector<vector<string>>>& journey_list) {
+        cout << "Journey List:" << endl;
+        for (const auto& journey : journey_list) {
+            cout << "Journey:" << endl;
+            for (const auto& step : journey) {
+                for (const auto& item : step) {
+                    cout << item << " ";
+                }
+                cout << endl;
+            }
+            cout << "-----" << endl;
+        }
     }
 };
 

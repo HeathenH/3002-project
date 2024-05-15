@@ -54,7 +54,7 @@ class NetworkServer(multiprocessing.Process):
         self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.udp_socket.bind((self.host_ip, self.query_port))
 
-        print(f"Station Server '{self.station_name}' started. TCP Port: {self.browser_port}, UDP Port: {self.query_port}, Neighbours (IP:UDP Port): {self.adjacent_addrs}")
+        print(f"Station Server '{self.station_name}' started. TCP Port: {self.browser_port}, UDP Port: {self.query_port}, Neighbours (IP:UDP Port): {self.adjacent_addresses}")
         
         # Start UDP handler
         udp_handler = multiprocessing.Process(target=self.handle_udp)
@@ -66,6 +66,7 @@ class NetworkServer(multiprocessing.Process):
             # for port in self.adjacent_ports:
             for addr in self.adjacent_addresses:
                 neighboring_station_address = (addr.split(":")[0], addr.split(":")[1])
+                print(neighboring_station_address)
                 self.udp_socket.sendto(query_data.encode("utf-8"), neighboring_station_address)
                 time.sleep(1)
 

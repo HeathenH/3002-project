@@ -105,7 +105,7 @@ class NetworkServer(multiprocessing.Process):
                         journey_list = []
 
                         
-                        # Start linear search of the time from the timetable from the 4th item
+                        # Start linear search of the time from the timetable from the 4th item [arrival-time, arrival-station]
                         for sublist in self.timetable[3:]:
                             time_in_sublist = sublist[0]  # set time
                             # Convert string time to datetime objects
@@ -117,7 +117,7 @@ class NetworkServer(multiprocessing.Process):
                                         self.counter += 1
                                 if self.counter > 0: # If more than 0, it means the station has been visited before, resets counter
                                     self.counter = 0
-                                    continue
+                                    continue         # if you have visited this station before (gone to this station at an earlier time), go to the next [arrival-time, arrival-station] route
                                 else:
                                     print(f"Time found: {time_in_sublist}")
                                     self.journey.append(sublist) # add schedule to the end of the journey list
@@ -130,7 +130,7 @@ class NetworkServer(multiprocessing.Process):
                                         print(self.journey_list)
                                         journey_list.append(self.journey)
                                         self.journey = self.hard_temp
-                                        break
+                                        break   # end the search for a path to the destination
                                     else:
                                         for port in self.station_list:
                                             station_name = port[0]

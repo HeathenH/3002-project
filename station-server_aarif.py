@@ -18,10 +18,12 @@ class NetworkServer(multiprocessing.Process):
         self.station_name = station_name
         self.browser_port = int(browser_port)
         self.query_port = int(query_port)
-        self.adjacent_addrs = adjacent_addrs
-        self.adjacent_ips = [int(port_str.split(':')[0]) for port_str in adjacent_addrs]
-        self.adjacent_ports = [int(port_str.split(':')[1]) for port_str in adjacent_addrs]
+        self.adjacent_addresses = adjacent_addrs.split(" ")
+        self.adjacent_ips = [addr.split(':')[0] for addr in self.adjacent_addresses]
+        self.adjacent_ports = [int(addr.split(':')[1]) for addr in self.adjacent_addresses]
+        #### change this to ur pc's IP address. To find ur IP address in Linux type "ifconfig" in ur terminal, if on windows type "ipconfig" on cmd/powershell
         self.host_ip = "10.135.223.145"
+        ####
         self.timetable_filename = f"tt-{self.station_name}"
         self.timetable = None
         self.station_list = []
@@ -143,7 +145,12 @@ class NetworkServer(multiprocessing.Process):
                                                 print(f"station name: {station_name}")
                                                 print(f"{self.journey[-1][-1]}")
                                                 journey_data = self.journey
-                                                adjacent_addr = ("127.0.0.1", port_number)
+                                                # find corresponding ip to the port_number
+                                                adj_ip = ""
+                                                for address in self.adjacent_addresses:
+                                                    if int(address.split(':')[1]) == port_number:
+                                                        adj_ip = address.split(":")[0]
+                                                adjacent_addr = (adj_ip, port_number)
                                                 self.udp_socket.sendto(json.dumps(journey_data).encode("utf-8"), adjacent_addr)
                                                 self.visited.append(station_name)
                                                 print(f"{journey_data}")
@@ -246,8 +253,12 @@ class NetworkServer(multiprocessing.Process):
                             journey_list[2].pop(-1)
                             port_number = int(journey_list[2][-1])
                             journey_data = journey_list
-                            address = ("127.0.0.1", port_number)
-                            self.udp_socket.sendto(json.dumps(journey_data).encode("utf-8"), address)
+                            adj_ip = ""
+                            for address in self.adjacent_addresses:
+                                if int(address.split(':')[1]) == port_number:
+                                    adj_ip = address.split(":")[0]
+                            adjacent_addr = (adj_ip, port_number)
+                            self.udp_socket.sendto(json.dumps(journey_data).encode("utf-8"), adjacent_addr)
                         else:
                             print("end pinged")
                             self.journey_list = []
@@ -283,8 +294,12 @@ class NetworkServer(multiprocessing.Process):
                                         print(f"journey ended {self.temp_list[0][2]}")
                                         journey_data = self.temp_list
                                         port_number = int(self.temp_list[2][-1])
-                                        address = ("127.0.0.1", port_number)
-                                        self.udp_socket.sendto(json.dumps(journey_data).encode("utf-8"), address)
+                                        adj_ip = ""
+                                        for address in self.adjacent_addresses:
+                                            if int(address.split(':')[1]) == port_number:
+                                                adj_ip = address.split(":")[0]
+                                        adjacent_addr = (adj_ip, port_number)
+                                        self.udp_socket.sendto(json.dumps(journey_data).encode("utf-8"), adjacent_addr)
                                         self.visited.append(self.temp_list[-1][-1])
                                         self.temp_list = self.journey
                                         print(f"sent final {journey_data} to {address}")
@@ -296,7 +311,11 @@ class NetworkServer(multiprocessing.Process):
                                             if station_name == self.temp_list[-1][-1]:
                                                 self.temp_list[2].append(self.query_port)
                                                 journey_data = self.temp_list
-                                                adjacent_addr = ("127.0.0.1", port_number)
+                                                adj_ip = ""
+                                                for address in self.adjacent_addresses:
+                                                    if int(address.split(':')[1]) == port_number:
+                                                        adj_ip = address.split(":")[0]
+                                                adjacent_addr = (adj_ip, port_number)
                                                 self.udp_socket.sendto(json.dumps(journey_data).encode("utf-8"), adjacent_addr)
                                                 self.visited.append(station_name)
                                                 self.temp_list = self.journey
@@ -309,8 +328,12 @@ class NetworkServer(multiprocessing.Process):
                             self.temp_list[0].append("midnight")
                             journey_data = self.temp_list
                             port_number = int(self.temp_list[2][-1])
-                            address = ("127.0.0.1", port_number)
-                            self.udp_socket.sendto(json.dumps(journey_data).encode("utf-8"), address)
+                            adj_ip = ""
+                            for address in self.adjacent_addresses:
+                                if int(address.split(':')[1]) == port_number:
+                                    adj_ip = address.split(":")[0]
+                            adjacent_addr = (adj_ip, port_number)
+                            self.udp_socket.sendto(json.dumps(journey_data).encode("utf-8"), adjacent_addr)
                         
         except KeyboardInterrupt:
             pass

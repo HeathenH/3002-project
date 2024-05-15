@@ -137,7 +137,7 @@ private:
     vector<vector<string>> temp_list;
     mutex queue_mutex;
 
-   void handle_tcp() {
+void handle_tcp() {
     try {
         while (true) {
             cout << "[DEBUG] Waiting to accept a new connection..." << endl;
@@ -219,7 +219,8 @@ private:
                                     inet_pton(AF_INET, host_ip.c_str(), &adjacent_addr.sin_addr);
 
                                     cout << "[DEBUG] Sending journey data to adjacent station " << port[0] << " on port " << port[1] << endl;
-                                    sendto(udp_socket, journey_data.c_str(), journey_data.size(), 0, (sockaddr*)&adjacent_addr, sizeof(adjacent_addr));
+                                    ssize_t udp_bytes_sent = sendto(udp_socket, journey_data.c_str(), journey_data.size(), 0, (sockaddr*)&adjacent_addr, sizeof(adjacent_addr));
+                                    cout << "[DEBUG] Sent " << udp_bytes_sent << " bytes via UDP to port " << port[1] << endl;
 
                                     visited.push_back(port[0]);
                                     journey = hard_temp;
@@ -231,7 +232,10 @@ private:
 
                 cout << "[DEBUG] Waiting for journey completion..." << endl;
 
-                while (true) {
+                bool journey_completed = false;
+                int wait_counter = 0; // to prevent infinite loop
+
+                while (!journey_completed && wait_counter < 10) { // add a condition to avoid infinite loop
                     {
                         lock_guard<mutex> lock(queue_mutex);
                         cout << "[DEBUG] Lock acquired, checking journey_list_queue" << endl;
@@ -245,10 +249,12 @@ private:
 
                     if (!journey_list.empty()) {
                         cout << "[DEBUG] journey_list is not empty, breaking out of the loop" << endl;
+                        journey_completed = true;
                         break;
                     }
 
-                    cout << "[DEBUG] journey_list is still empty, sleeping for 1 second" << endl;
+                    wait_counter++;
+                    cout << "[DEBUG] journey_list is still empty, sleeping for 1 second (attempt " << wait_counter << ")" << endl;
                     this_thread::sleep_for(chrono::seconds(1));
                 }
 
@@ -266,29 +272,61 @@ private:
 
                 cout << "[DEBUG] Journey completed. Forming response..." << endl;
 
-                string response = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nConnection: Closed\r\n\r\n";
-                response += "<html><body><h1>Journey from " + station_name + " to " + destination + " at " + start_time + "</h1>\n";
-                if (journey_list.empty()) {
-                    response += "<p>There is no journey from " + station_name + " to " + destination + " leaving after " + start_time + " today.</p>";
-                } else {
-                    for (auto& step : journey_list[0]) {
-                        response += "<p>Catch " + step[1] + " from " + step[2] + ", at time " + step[0] + ", to arrive at " + step[4] + " at time " + step[3] + ".</p>\n";
-                    }
-                }
-                response += "</body></html>";
+string response = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nConnection: Closed\r\n\r\n";
+response += "<html><body><h1>Journey from " + station_name + " to " + destination + " at " + start_time + "</h1>\n";
+if (journey_list.empty()) {
+    response += "<p>There is no journey from " + station_name + " to " + destination + " leaving after " + start_time + " today.</p>";
+} else {
+    cout << "[DEBUG] Journey list size: " << journey_list.size() << endl;
+    for (const auto& journey : journey_list) {
+        cout << "[DEBUG] Processing journey with " << journey.size() << " steps." << endl;
+        for (const auto& step : journey) {
+            if (step.size() < 5) {
+                cerr << "[ERROR] Invalid step data: expected at least 5 elements, got " << step.size() << endl;
+                continue;
+            }
+            cout << "[DEBUG] Step details: ";
+            for (const auto& detail : step) {
+                cout << detail << " ";
+            }
+            cout << endl;
+            response += "<p>Catch " + step[1] + " from " + step[2] + ", at time " + step[0] + ", to arrive at " + step[4] + " at time " + step[3] + ".</p>\n";
+        }
+    }
+}
+response += "</body></html>";
 
-                cout << "[DEBUG] Sending response: " << response << endl;
+cout << "[DEBUG] Formed response: " << response << endl;
 
-                send(client_socket, response.c_str(), response.size(), 0);
-                journey_list.clear();
-                lock_guard<mutex> lock(queue_mutex);
-                while (!journey_list_queue.empty()) {
-                    journey_list_queue.pop();
-                }
+ssize_t bytes_sent = send(client_socket, response.c_str(), response.size(), 0);
+if (bytes_sent < 0) {
+    cerr << "[ERROR] Error sending response: " << strerror(errno) << endl;
+} else {
+    cout << "[DEBUG] Sent " << bytes_sent << " bytes" << endl;
+}
+
+// Check if the entire response was sent
+if (bytes_sent < response.size()) {
+    cerr << "[ERROR] Incomplete response sent. Expected: " << response.size() << ", Sent: " << bytes_sent << endl;
+} else {
+    cout << "[DEBUG] Entire response sent successfully" << endl;
+}
+
+journey_list.clear();
+lock_guard<mutex> lock(queue_mutex);
+while (!journey_list_queue.empty()) {
+    journey_list_queue.pop();
+}
+
             } else {
                 string response = "HTTP/1.1 404 Not Found\r\nContent-Type: text/html\r\nConnection: Closed\r\n\r\n";
                 response += "<html><body><h1>404 Not Found</h1></body></html>";
-                send(client_socket, response.c_str(), response.size(), 0);
+                ssize_t bytes_sent = send(client_socket, response.c_str(), response.size(), 0);
+                if (bytes_sent < 0) {
+                    cerr << "[ERROR] Error sending 404 response: " << strerror(errno) << endl;
+                } else {
+                    cout << "[DEBUG] Sent 404 response: " << response << endl;
+                }
             }
             close(client_socket);
             cout << "[DEBUG] Connection closed" << endl;
@@ -297,6 +335,12 @@ private:
         cerr << "[ERROR] Error in handle_tcp: " << e.what() << endl;
     }
 }
+
+
+
+
+
+
 
 
 // trim from start (in place)

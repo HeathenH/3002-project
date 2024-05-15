@@ -413,30 +413,44 @@ static inline void trim(std::string &s) {
     }
 
     void load_timetable() {
-        ifstream file(timetable_filename);
-        if (!file.is_open()) {
-            cerr << "Timetable file '" << timetable_filename << "' not found for station '" << station_name << "'" << endl;
-            return;
-        }
-        timetable.clear();
-        string line;
-        bool is_first_line = true;
-        while (getline(file, line)) {
-            if (is_first_line) {
-                is_first_line = false;
-                continue; // Skip the first line
-            }
-            stringstream ss(line);
-            string item;
-            vector<string> row;
-            while (getline(ss, item, ',')) {
-                row.push_back(item);
-            }
-            timetable.push_back(row);
-        }
-        file.close();
-        cout << "Timetable loaded for station '" << station_name << "'" << endl;
+    ifstream file(timetable_filename);
+    if (!file.is_open()) {
+        cerr << "Timetable file '" << timetable_filename << "' not found for station '" << station_name << "'" << endl;
+        return;
     }
+    timetable.clear();
+    string line;
+
+    // Skip the first two lines
+    getline(file, line); // Skip header line #1
+    getline(file, line); // Skip header line #2
+
+    while (getline(file, line)) {
+        cout << "[DEBUG] Reading line: " << line << endl;
+        stringstream ss(line);
+        string item;
+        vector<string> row;
+        while (getline(ss, item, ',')) {
+            cout << "[DEBUG] Parsed item: " << item << endl;
+            row.push_back(item);
+        }
+        timetable.push_back(row);
+    }
+    file.close();
+    
+    // Print the loaded timetable for verification
+    cout << "[DEBUG] Timetable loaded for station '" << station_name << "'" << endl;
+    for (const auto& row : timetable) {
+        for (const auto& item : row) {
+            cout << "[DEBUG] Stored item: " << item << " ";
+        }
+        cout << endl;
+    }
+}
+
+
+
+
 
     time_t get_last_modified_time(const string& filename) {
         struct stat file_stat;
@@ -502,18 +516,19 @@ static inline void trim(std::string &s) {
     }
 
     void print_journey_list(const vector<vector<vector<string>>>& journey_list) {
-        cout << "Journey List:" << endl;
-        for (const auto& journey : journey_list) {
-            cout << "Journey:" << endl;
-            for (const auto& step : journey) {
-                for (const auto& item : step) {
-                    cout << item << " ";
-                }
-                cout << endl;
+    cout << "[DEBUG] Journey List:" << endl;
+    for (const auto& journey : journey_list) {
+        cout << "[DEBUG] Journey:" << endl;
+        for (const auto& step : journey) {
+            for (const auto& item : step) {
+                cout << "[DEBUG] " << item << " ";
             }
-            cout << "-----" << endl;
+            cout << endl;
         }
+        cout << "[DEBUG] -----" << endl;
     }
+}
+
 };
 
 int main(int argc, char* argv[]) {

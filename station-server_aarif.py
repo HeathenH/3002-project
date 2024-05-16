@@ -109,6 +109,7 @@ class NetworkServer(multiprocessing.Process):
             while True:
                 print("xdd")
                 tcp_conn, _ = self.tcp_socket.accept()
+                # START TIMER HERE
                 print("issue here ^")
                 request_data = tcp_conn.recv(4096).decode("utf-8")
                 if request_data:

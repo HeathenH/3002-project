@@ -18,7 +18,7 @@ class NetworkServer(multiprocessing.Process):
         self.station_name = station_name
         self.browser_port = int(browser_port)
         self.query_port = int(query_port)
-        self.adjacent_addresses = adjacent_addrs.split(" ")
+        self.adjacent_addresses = adjacent_addrs
         self.adjacent_ips = [addr.split(':')[0] for addr in self.adjacent_addresses]
         self.adjacent_ports = [int(addr.split(':')[1]) for addr in self.adjacent_addresses]
         #### change this to ur pc's IP address. To find ur IP address in Linux type "ifconfig" in ur terminal, if on windows type "ipconfig" on cmd/powershell
@@ -358,7 +358,7 @@ if __name__ == "__main__":
     browser_port = sys.argv[2]
     query_port = sys.argv[3]
     # adjacent_ports = [int(port_str.split(':')[1]) for port_str in sys.argv[4:]]
-    adjacent_addrs = sys.argv[4]
+    adjacent_addrs = sys.argv[4:]
 
     # Create and start the NetworkServer instance
     server = NetworkServer(station_name, browser_port, query_port, adjacent_addrs)

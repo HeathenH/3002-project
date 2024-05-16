@@ -137,6 +137,31 @@ private:
     vector<vector<string>> temp_list;
     mutex queue_mutex;
 
+bool isValidRoute(const std::string& currentStation, const std::string& targetDestination, const std::vector<std::string>& adjacentStations) {
+    // Trim whitespace
+    std::string trimmedCurrent = currentStation;
+    std::string trimmedTarget = targetDestination;
+    trim(trimmedCurrent);
+    trim(trimmedTarget);
+
+    // Check if current station is the target destination
+    if (trimmedCurrent == trimmedTarget) {
+        return true;
+    }
+
+    // Check if current station is in the list of adjacent stations
+    for (const auto& station : adjacentStations) {
+        std::string trimmedStation = station;
+        trim(trimmedStation);
+        if (trimmedCurrent == trimmedStation) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+
 void handle_tcp() {
     try {
         while (true) {
@@ -196,14 +221,12 @@ void handle_tcp() {
                         string next_station = sublist.back();
                         trim(next_station);
 
-                        // New condition to check if the next station is directly connected to the destination
-                        bool directly_connected_to_destination = any_of(timetable.begin(), timetable.end(), [&](const vector<string>& entry) {
-                            return entry[2] == next_station && entry.back() == destination;
-                        });
+                        vector<string> adjacent_stations;
+                        for (const auto& port : station_list) {
+                            adjacent_stations.push_back(port[0]);
+                        }
 
-                        bool journey_not_ended = journey[0].back() != "ended" && journey[0].back() != "midnight";
-
-                        if (next_station == destination || directly_connected_to_destination || journey_not_ended) {
+                        if (isValidRoute(next_station, destination, adjacent_stations)) {
                             cout << "[DEBUG] Adding sublist to journey: ";
                             for (const auto& item : sublist) {
                                 cout << item << " ";
@@ -234,7 +257,6 @@ void handle_tcp() {
                                     trim(trimmed_port);
                                     trim(trimmed_journey_back);
 
-                                    // Compare the trimmed strings
                                     if (trimmed_port == trimmed_journey_back) {
                                         string journey_data = serialize_journey2(journey);
                                         sockaddr_in adjacent_addr;
@@ -295,7 +317,7 @@ void handle_tcp() {
                     cout << "[DEBUG] Multiple journeys found, selecting the shortest one" << endl;
                     auto shortest = *min_element(journey_list.begin(), journey_list.end(),
                         [this](const vector<vector<string>>& a, const vector<vector<string>>& b) {
-                            return parse_time(a[0].back()) < parse_time(b[0].back());
+                            return parse_time(a.back()[3]) < parse_time(b.back()[3]);
                         });
                     journey_list = {shortest};
                 }
@@ -356,6 +378,7 @@ void handle_tcp() {
         cerr << "[ERROR] Error in handle_tcp: " << e.what() << endl;
     }
 }
+
 
 
 void handle_udp() {
@@ -427,39 +450,45 @@ void handle_udp() {
                             trim(temp1);
                             trim(temp2);
 
+                            vector<string> adjacent_stations;
+                            for (const auto& port : station_list) {
+                                adjacent_stations.push_back(port[0]);
+                            }
+
+                            if (isValidRoute(temp1, temp2, adjacent_stations)) {
                                 if (temp1 == temp2) {
-                                temp_list[0].push_back("ended");
-                                string journey_data = serialize_journey2(temp_list);
-                                sendto(udp_socket, journey_data.c_str(), journey_data.size(), 0, (sockaddr*)&sender_addr, sizeof(sender_addr));
-                                visited.push_back(temp_list.back().back());
-                                temp_list = journey;
-                                cout << "[DEBUG] Journey ended: " << serialize_journey2(temp_list) << endl;
-                            } else {
-                                for (auto& port : station_list) {
-                                    cout << "[DEBUG] Checking station: " << port[0] << " on port: " << port[1] << endl;
+                                    temp_list[0].push_back("ended");
+                                    string journey_data = serialize_journey2(temp_list);
+                                    sendto(udp_socket, journey_data.c_str(), journey_data.size(), 0, (sockaddr*)&sender_addr, sizeof(sender_addr));
+                                    visited.push_back(temp_list.back().back());
+                                    temp_list = journey;
+                                    cout << "[DEBUG] Journey ended: " << serialize_journey2(temp_list) << endl;
+                                } else {
+                                    for (auto& port : station_list) {
+                                        cout << "[DEBUG] Checking station: " << port[0] << " on port: " << port[1] << endl;
 
-                                    string trimmed_port = port[0];
-                                    string trimmed_journey_back = journey.back().back();
-                                    trim(trimmed_port);
-                                    trim(trimmed_journey_back);
+                                        string trimmed_port = port[0];
+                                        string trimmed_journey_back = journey.back().back();
+                                        trim(trimmed_port);
+                                        trim(trimmed_journey_back);
 
-                                    // Compare the trimmed strings
-                                    if (trimmed_port == trimmed_journey_back) {
-                                        cout << "[DEBUG] Matched station: " << port[0] << " on port: " << port[1] << endl;
-                                        string journey_data = serialize_journey2(journey);
-                                        sockaddr_in adjacent_addr;
-                                        adjacent_addr.sin_family = AF_INET;
-                                        adjacent_addr.sin_port = htons(stoi(port[1]));
-                                        inet_pton(AF_INET, host_ip.c_str(), &adjacent_addr.sin_addr);
+                                        if (trimmed_port == trimmed_journey_back) {
+                                            cout << "[DEBUG] Matched station: " << port[0] << " on port: " << port[1] << endl;
+                                            string journey_data = serialize_journey2(journey);
+                                            sockaddr_in adjacent_addr;
+                                            adjacent_addr.sin_family = AF_INET;
+                                            adjacent_addr.sin_port = htons(stoi(port[1]));
+                                            inet_pton(AF_INET, host_ip.c_str(), &adjacent_addr.sin_addr);
 
-                                        cout << "[DEBUG] Sending journey data to adjacent station " << port[0] << " on port " << port[1] << endl;
-                                        ssize_t udp_bytes_sent = sendto(udp_socket, journey_data.c_str(), journey_data.size(), 0, (sockaddr*)&adjacent_addr, sizeof(adjacent_addr));
-                                        cout << "[DEBUG] Sent " << udp_bytes_sent << " bytes via UDP to port " << port[1] << endl;
+                                            cout << "[DEBUG] Sending journey data to adjacent station " << port[0] << " on port " << port[1] << endl;
+                                            ssize_t udp_bytes_sent = sendto(udp_socket, journey_data.c_str(), journey_data.size(), 0, (sockaddr*)&adjacent_addr, sizeof(adjacent_addr));
+                                            cout << "[DEBUG] Sent " << udp_bytes_sent << " bytes via UDP to port " << port[1] << endl;
 
-                                        cout << "[DEBUG] Current journey: " << serialize_journey2(journey) << endl;
+                                            cout << "[DEBUG] Current journey: " << serialize_journey2(journey) << endl;
 
-                                        visited.push_back(port[0]);
-                                        journey = hard_temp;
+                                            visited.push_back(port[0]);
+                                            journey = hard_temp;
+                                        }
                                     }
                                 }
                             }
@@ -479,8 +508,6 @@ void handle_udp() {
         cerr << "[ERROR] Error in handle_udp: " << e.what() << endl;
     }
 }
-
-
 
 string serialize_journey2(const vector<vector<string>>& journey_data) {
     stringstream ss;
@@ -511,7 +538,6 @@ vector<vector<string>> deserialize_journey2(const string& data) {
     }
     return journey_data;
 }
-
 
 
 

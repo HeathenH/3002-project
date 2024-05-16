@@ -170,7 +170,7 @@ class NetworkServer(multiprocessing.Process):
 
                         print("end of timetable")
                         while len(journey_list) < 1:
-                            time.sleep(2)
+                            time.sleep(5)
                             while not self.journey_list_queue.empty():
                                 journey_list.append(self.journey_list_queue.get())
                                 

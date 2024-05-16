@@ -33,86 +33,85 @@ public:
     }
 
     void run() {
-    // Initialize TCP server
-    tcp_socket = socket(AF_INET, SOCK_STREAM, 0);
-    if (tcp_socket < 0) {
-        cerr << "Error creating TCP socket" << endl;
-        exit(1);
-    }
-    sockaddr_in tcp_server_addr;
-    tcp_server_addr.sin_family = AF_INET;
-    tcp_server_addr.sin_port = htons(browser_port);
-    inet_pton(AF_INET, host_ip.c_str(), &tcp_server_addr.sin_addr);
-    if (bind(tcp_socket, (sockaddr*)&tcp_server_addr, sizeof(tcp_server_addr)) < 0) {
-        cerr << "Error binding TCP socket" << endl;
-        exit(1);
-    }
-    if (listen(tcp_socket, 5) < 0) {
-        cerr << "Error listening on TCP socket" << endl;
-        exit(1);
-    }
+        // Initialize TCP server
+        tcp_socket = socket(AF_INET, SOCK_STREAM, 0);
+        if (tcp_socket < 0) {
+            cerr << "Error creating TCP socket" << endl;
+            exit(1);
+        }
+        sockaddr_in tcp_server_addr;
+        tcp_server_addr.sin_family = AF_INET;
+        tcp_server_addr.sin_port = htons(browser_port);
+        inet_pton(AF_INET, host_ip.c_str(), &tcp_server_addr.sin_addr);
+        if (bind(tcp_socket, (sockaddr*)&tcp_server_addr, sizeof(tcp_server_addr)) < 0) {
+            cerr << "Error binding TCP socket" << endl;
+            exit(1);
+        }
+        if (listen(tcp_socket, 5) < 0) {
+            cerr << "Error listening on TCP socket" << endl;
+            exit(1);
+        }
 
-    // Initialize UDP socket
-    udp_socket = socket(AF_INET, SOCK_DGRAM, 0);
-    if (udp_socket < 0) {
-        cerr << "Error creating UDP socket" << endl;
-        exit(1);
-    }
-    sockaddr_in udp_server_addr;
-    udp_server_addr.sin_family = AF_INET;
-    udp_server_addr.sin_port = htons(query_port);
-    inet_pton(AF_INET, host_ip.c_str(), &udp_server_addr.sin_addr);
-    if (bind(udp_socket, (sockaddr*)&udp_server_addr, sizeof(udp_server_addr)) < 0) {
-        cerr << "Error binding UDP socket" << endl;
-        exit(1);
-    }
+        // Initialize UDP socket
+        udp_socket = socket(AF_INET, SOCK_DGRAM, 0);
+        if (udp_socket < 0) {
+            cerr << "Error creating UDP socket" << endl;
+            exit(1);
+        }
+        sockaddr_in udp_server_addr;
+        udp_server_addr.sin_family = AF_INET;
+        udp_server_addr.sin_port = htons(query_port);
+        inet_pton(AF_INET, host_ip.c_str(), &udp_server_addr.sin_addr);
+        if (bind(udp_socket, (sockaddr*)&udp_server_addr, sizeof(udp_server_addr)) < 0) {
+            cerr << "Error binding UDP socket" << endl;
+            exit(1);
+        }
 
-    cout << "Station Server '" << station_name << "' started. TCP Port: " << browser_port << ", UDP Port: " << query_port << ", Neighbour UDP Ports: ";
-    for (int port : adjacent_ports) {
-        cout << port << " ";
-    }
-    cout << endl;
-
-    thread udp_handler(&NetworkServer::handle_udp, this);
-    udp_handler.detach();
-
-    while (station_list.size() != adjacent_ports.size()) {
-        string query_data = "query_station";
+        cout << "Station Server '" << station_name << "' started. TCP Port: " << browser_port << ", UDP Port: " << query_port << ", Neighbour UDP Ports: ";
         for (int port : adjacent_ports) {
-            sockaddr_in neighboring_station_addr;
-            neighboring_station_addr.sin_family = AF_INET;
-            neighboring_station_addr.sin_port = htons(port);
-            inet_pton(AF_INET, host_ip.c_str(), &neighboring_station_addr.sin_addr);
-            sendto(udp_socket, query_data.c_str(), query_data.size(), 0, (sockaddr*)&neighboring_station_addr, sizeof(neighboring_station_addr));
-            this_thread::sleep_for(chrono::seconds(1));
-        }
-
-        if (!station_list_queue.empty()) {
-            lock_guard<mutex> lock(queue_mutex);
-            station_list = station_list_queue.front();
-            station_list_queue.pop();
-        }
-        cout << "station list: ";
-        for (auto& station : station_list) {
-            cout << station[0] << " ";
+            cout << port << " ";
         }
         cout << endl;
-    }
 
-    thread tcp_handler(&NetworkServer::handle_tcp, this);
-    tcp_handler.detach();
+        thread udp_handler(&NetworkServer::handle_udp, this);
+        udp_handler.detach();
 
-    while (true) {
-        this_thread::sleep_for(chrono::seconds(1));
-        auto current_modified_time = get_last_modified_time(timetable_filename);
-        if (current_modified_time != last_modified_time) {
-            last_modified_time = current_modified_time;
-            load_timetable();
-            cout << "Timetable updated" << endl;
+        while (station_list.size() != adjacent_ports.size()) {
+            string query_data = "query_station";
+            for (int port : adjacent_ports) {
+                sockaddr_in neighboring_station_addr;
+                neighboring_station_addr.sin_family = AF_INET;
+                neighboring_station_addr.sin_port = htons(port);
+                inet_pton(AF_INET, host_ip.c_str(), &neighboring_station_addr.sin_addr);
+                sendto(udp_socket, query_data.c_str(), query_data.size(), 0, (sockaddr*)&neighboring_station_addr, sizeof(neighboring_station_addr));
+                this_thread::sleep_for(chrono::seconds(1));
+            }
+
+            if (!station_list_queue.empty()) {
+                lock_guard<mutex> lock(queue_mutex);
+                station_list = station_list_queue.front();
+                station_list_queue.pop();
+            }
+            cout << "station list: ";
+            for (auto& station : station_list) {
+                cout << station[0] << " ";
+            }
+            cout << endl;
+        }
+
+        thread tcp_handler(&NetworkServer::handle_tcp, this);
+        tcp_handler.detach();
+
+        while (true) {
+            this_thread::sleep_for(chrono::seconds(1));
+            auto current_modified_time = get_last_modified_time(timetable_filename);
+            if (current_modified_time != last_modified_time) {
+                last_modified_time = current_modified_time;
+                load_timetable();
+                cout << "Timetable updated" << endl;
+            }
         }
     }
-}
-
 
 private:
     string station_name;
@@ -170,10 +169,10 @@ void handle_tcp() {
             cout << "[DEBUG] HTTP Method: " << http_method << ", HTTP Path: " << http_path << ", HTTP Version: " << http_version << endl;
 
             if (http_method == "GET" && http_path.find("/?to=") != string::npos) {
-                visited = { station_name };
+                visited = {station_name};
                 destination = http_path.substr(http_path.find("=") + 1);
                 trim(destination);  // Trim the destination
-                journey = { {"odyssey", to_string(query_port), destination}, {station_name}, {to_string(query_port)} };
+                journey = {{"odyssey", to_string(query_port), destination}, {station_name}, {to_string(query_port)}};
                 hard_temp = journey;
                 journey_list.clear();
 
@@ -194,36 +193,52 @@ void handle_tcp() {
                             continue;
                         }
 
-                        journey.push_back(sublist);
-                        journey[1].push_back(sublist.back());
+                        string next_station = sublist.back();
+                        trim(next_station);
 
-                        string current_destination = journey.back().back();
-                        trim(current_destination);  // Trim the current destination
-                        cout << "[DEBUG] Comparing journey destination: " << current_destination << " with target destination: " << destination << endl;
+                        // New condition to check if the next station is directly connected to the destination
+                        bool directly_connected_to_destination = any_of(timetable.begin(), timetable.end(), [&](const vector<string>& entry) {
+                            return entry[2] == next_station && entry.back() == destination;
+                        });
 
-                        if (current_destination == destination) {
-                            cout << "[DEBUG] Destination " << destination << " reached" << endl;
-                            journey[0].push_back("ended");
-                            journey_list.push_back(journey);
-                            journey = hard_temp;
-                            break;
-                        } else {
-                            cout << "[DEBUG] Journey not yet completed, checking adjacent stations" << endl;
+                        if (next_station == destination || directly_connected_to_destination) {
+                            cout << "[DEBUG] Adding sublist to journey: ";
+                            for (const auto& item : sublist) {
+                                cout << item << " ";
+                            }
+                            cout << endl;
 
-                            for (auto& port : station_list) {
-                                if (port[0] == journey.back().back()) {
-                                    string journey_data = serialize_journey(journey);
-                                    sockaddr_in adjacent_addr;
-                                    adjacent_addr.sin_family = AF_INET;
-                                    adjacent_addr.sin_port = htons(stoi(port[1]));
-                                    inet_pton(AF_INET, host_ip.c_str(), &adjacent_addr.sin_addr);
+                            journey.push_back(sublist);
+                            journey[1].push_back(next_station);
 
-                                    cout << "[DEBUG] Sending journey data to adjacent station " << port[0] << " on port " << port[1] << endl;
-                                    ssize_t udp_bytes_sent = sendto(udp_socket, journey_data.c_str(), journey_data.size(), 0, (sockaddr*)&adjacent_addr, sizeof(adjacent_addr));
-                                    cout << "[DEBUG] Sent " << udp_bytes_sent << " bytes via UDP to port " << port[1] << endl;
+                            string current_destination = journey.back().back();
+                            trim(current_destination);  // Trim the current destination
+                            cout << "[DEBUG] Comparing journey destination: " << current_destination << " with target destination: " << destination << endl;
 
-                                    visited.push_back(port[0]);
-                                    journey = hard_temp;
+                            if (current_destination == destination) {
+                                cout << "[DEBUG] Destination " << destination << " reached" << endl;
+                                journey[0].push_back("ended");
+                                journey_list.push_back(journey);
+                                journey = hard_temp;
+                                break;
+                            } else {
+                                cout << "[DEBUG] Journey not yet completed, checking adjacent stations" << endl;
+
+                                for (auto& port : station_list) {
+                                    if (port[0] == journey.back().back()) {
+                                        string journey_data = serialize_journey(journey);
+                                        sockaddr_in adjacent_addr;
+                                        adjacent_addr.sin_family = AF_INET;
+                                        adjacent_addr.sin_port = htons(stoi(port[1]));
+                                        inet_pton(AF_INET, host_ip.c_str(), &adjacent_addr.sin_addr);
+
+                                        cout << "[DEBUG] Sending journey data to adjacent station " << port[0] << " on port " << port[1] << endl;
+                                        ssize_t udp_bytes_sent = sendto(udp_socket, journey_data.c_str(), journey_data.size(), 0, (sockaddr*)&adjacent_addr, sizeof(adjacent_addr));
+                                        cout << "[DEBUG] Sent " << udp_bytes_sent << " bytes via UDP to port " << port[1] << endl;
+
+                                        visited.push_back(port[0]);
+                                        journey = hard_temp;
+                                    }
                                 }
                             }
                         }
@@ -258,13 +273,21 @@ void handle_tcp() {
                     this_thread::sleep_for(chrono::seconds(1));
                 }
 
+                // Filter out invalid journeys
+                journey_list.erase(
+                    remove_if(journey_list.begin(), journey_list.end(), [](const vector<vector<string>>& journey) {
+                        return journey.size() < 2 || journey[0].back() != "ended";
+                    }),
+                    journey_list.end()
+                );
+
                 if (journey_list.size() > 1) {
                     cout << "[DEBUG] Multiple journeys found, selecting the shortest one" << endl;
                     auto shortest = *min_element(journey_list.begin(), journey_list.end(),
-                        [](const vector<vector<string>>& a, const vector<vector<string>>& b) {
+                        [this](const vector<vector<string>>& a, const vector<vector<string>>& b) {
                             return parse_time(a[0].back()) < parse_time(b[0].back());
                         });
-                    journey_list = { shortest };
+                    journey_list = {shortest};
                 }
 
                 // Print the journey_list for debugging
@@ -325,25 +348,6 @@ void handle_tcp() {
 }
 
 
-// trim from start (in place)
-static inline void ltrim(std::string &s) {
-    s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch) {
-        return !std::isspace(ch);
-    }));
-}
-
-// trim from end (in place)
-static inline void rtrim(std::string &s) {
-    s.erase(std::find_if(s.rbegin(), s.rend(), [](unsigned char ch) {
-        return !std::isspace(ch);
-    }).base(), s.end());
-}
-
-// trim from both ends (in place)
-static inline void trim(std::string &s) {
-    ltrim(s);
-    rtrim(s);
-}
 
     void handle_udp() {
         try {
@@ -439,44 +443,40 @@ static inline void trim(std::string &s) {
     }
 
     void load_timetable() {
-    ifstream file(timetable_filename);
-    if (!file.is_open()) {
-        cerr << "Timetable file '" << timetable_filename << "' not found for station '" << station_name << "'" << endl;
-        return;
-    }
-    timetable.clear();
-    string line;
-
-    // Skip the first two lines
-    getline(file, line); // Skip header line #1
-    getline(file, line); // Skip header line #2
-
-    while (getline(file, line)) {
-        cout << "[DEBUG] Reading line: " << line << endl;
-        stringstream ss(line);
-        string item;
-        vector<string> row;
-        while (getline(ss, item, ',')) {
-            cout << "[DEBUG] Parsed item: " << item << endl;
-            row.push_back(item);
+        ifstream file(timetable_filename);
+        if (!file.is_open()) {
+            cerr << "Timetable file '" << timetable_filename << "' not found for station '" << station_name << "'" << endl;
+            return;
         }
-        timetable.push_back(row);
-    }
-    file.close();
-    
-    // Print the loaded timetable for verification
-    cout << "[DEBUG] Timetable loaded for station '" << station_name << "'" << endl;
-    for (const auto& row : timetable) {
-        for (const auto& item : row) {
-            cout << "[DEBUG] Stored item: " << item << " ";
+        timetable.clear();
+        string line;
+
+        // Skip the first two lines
+        getline(file, line); // Skip header line #1
+        getline(file, line); // Skip header line #2
+
+        while (getline(file, line)) {
+            cout << "[DEBUG] Reading line: " << line << endl;
+            stringstream ss(line);
+            string item;
+            vector<string> row;
+            while (getline(ss, item, ',')) {
+                cout << "[DEBUG] Parsed item: " << item << endl;
+                row.push_back(item);
+            }
+            timetable.push_back(row);
         }
-        cout << endl;
+        file.close();
+        
+        // Print the loaded timetable for verification
+        cout << "[DEBUG] Timetable loaded for station '" << station_name << "'" << endl;
+        for (const auto& row : timetable) {
+            for (const auto& item : row) {
+                cout << "[DEBUG] Stored item: " << item << " ";
+            }
+            cout << endl;
+        }
     }
-}
-
-
-
-
 
     time_t get_last_modified_time(const string& filename) {
         struct stat file_stat;
@@ -542,19 +542,38 @@ static inline void trim(std::string &s) {
     }
 
     void print_journey_list(const vector<vector<vector<string>>>& journey_list) {
-    cout << "[DEBUG] Journey List:" << endl;
-    for (const auto& journey : journey_list) {
-        cout << "[DEBUG] Journey:" << endl;
-        for (const auto& step : journey) {
-            for (const auto& item : step) {
-                cout << "[DEBUG] " << item << " ";
+        cout << "[DEBUG] Journey List:" << endl;
+        for (const auto& journey : journey_list) {
+            cout << "[DEBUG] Journey:" << endl;
+            for (const auto& step : journey) {
+                for (const auto& item : step) {
+                    cout << "[DEBUG] " << item << " ";
+                }
+                cout << endl;
             }
-            cout << endl;
+            cout << "[DEBUG] -----" << endl;
         }
-        cout << "[DEBUG] -----" << endl;
     }
-}
 
+    // trim from start (in place)
+    static inline void ltrim(std::string &s) {
+        s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch) {
+            return !std::isspace(ch);
+        }));
+    }
+
+    // trim from end (in place)
+    static inline void rtrim(std::string &s) {
+        s.erase(std::find_if(s.rbegin(), s.rend(), [](unsigned char ch) {
+            return !std::isspace(ch);
+        }).base(), s.end());
+    }
+
+    // trim from both ends (in place)
+    static inline void trim(std::string &s) {
+        ltrim(s);
+        rtrim(s);
+    }
 };
 
 int main(int argc, char* argv[]) {

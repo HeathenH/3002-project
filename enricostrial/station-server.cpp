@@ -201,7 +201,9 @@ void handle_tcp() {
                             return entry[2] == next_station && entry.back() == destination;
                         });
 
-                        if (next_station == destination || directly_connected_to_destination) {
+                        bool journey_not_ended = journey[0].back() != "ended" && journey[0].back() != "midnight";
+
+                        if (next_station == destination || directly_connected_to_destination || journey_not_ended) {
                             cout << "[DEBUG] Adding sublist to journey: ";
                             for (const auto& item : sublist) {
                                 cout << item << " ";
@@ -225,8 +227,16 @@ void handle_tcp() {
                                 cout << "[DEBUG] Journey not yet completed, checking adjacent stations" << endl;
 
                                 for (auto& port : station_list) {
-                                    if (port[0] == journey.back().back()) {
-                                        string journey_data = serialize_journey(journey);
+                                    cout << "[DEBUG] port[0]: " << port[0] << ", journey.back().back(): " << journey.back().back() << endl;
+
+                                    string trimmed_port = port[0];
+                                    string trimmed_journey_back = journey.back().back();
+                                    trim(trimmed_port);
+                                    trim(trimmed_journey_back);
+
+                                    // Compare the trimmed strings
+                                    if (trimmed_port == trimmed_journey_back) {
+                                        string journey_data = serialize_journey2(journey);
                                         sockaddr_in adjacent_addr;
                                         adjacent_addr.sin_family = AF_INET;
                                         adjacent_addr.sin_port = htons(stoi(port[1]));
@@ -348,99 +358,162 @@ void handle_tcp() {
 }
 
 
+void handle_udp() {
+    try {
+        cout << "[DEBUG] handle_udp is called" << endl;
+        while (true) {
+            char buffer[4096];
+            sockaddr_in sender_addr;
+            socklen_t sender_len = sizeof(sender_addr);
+            int bytes_received = recvfrom(udp_socket, buffer, sizeof(buffer), 0, (sockaddr*)&sender_addr, &sender_len);
+            if (bytes_received < 0) {
+                cerr << "[ERROR] Error receiving UDP data" << endl;
+                continue;
+            }
+            buffer[bytes_received] = '\0';
+            string data(buffer);
+            cout << "[DEBUG] Received UDP data from " << inet_ntoa(sender_addr.sin_addr) << ":" << ntohs(sender_addr.sin_port) << " - " << data << endl;
 
-    void handle_udp() {
-        try {
-            while (true) {
-                char buffer[4096];
-                sockaddr_in sender_addr;
-                socklen_t sender_len = sizeof(sender_addr);
-                int bytes_received = recvfrom(udp_socket, buffer, sizeof(buffer), 0, (sockaddr*)&sender_addr, &sender_len);
-                if (bytes_received < 0) {
-                    cerr << "Error receiving UDP data" << endl;
-                    continue;
+            if (data == "query_station") {
+                vector<vector<string>> station_data = {{station_name, to_string(query_port), "station_port"}};
+                string station_json = serialize_journey2(station_data);
+                sendto(udp_socket, station_json.c_str(), station_json.size(), 0, (sockaddr*)&sender_addr, sender_len);
+                cout << "[DEBUG] Sent station data to " << inet_ntoa(sender_addr.sin_addr) << ":" << ntohs(sender_addr.sin_port) << endl;
+            } else if (data.find("station_port") != string::npos) {
+                vector<vector<string>> station_list_data = deserialize_journey2(data);
+                lock_guard<mutex> lock(queue_mutex);
+                if (find_if(station_list.begin(), station_list.end(), [&](const vector<string>& item) { return item[1] == station_list_data[0][1]; }) == station_list.end()) {
+                    station_list.push_back(station_list_data[0]);
+                    station_list_queue.push(station_list);
                 }
-                buffer[bytes_received] = '\0';
-                string data(buffer);
-                cout << "Received UDP data from " << inet_ntoa(sender_addr.sin_addr) << ":" << ntohs(sender_addr.sin_port) << " - " << data << endl;
+                cout << "[DEBUG] Updated station list: ";
+                for (auto& station : station_list) {
+                    cout << station[0] << " ";
+                }
+                cout << endl;
+            } else if (data.find("odyssey") != string::npos) {
+                cout << "[DEBUG] Received journey data: " << data << endl;
+                vector<vector<string>> received_journey = deserialize_journey2(data);
+                cout << "[DEBUG] Deserialized journey: " << serialize_journey2(received_journey) << endl;
 
-                if (data == "query_station") {
-                    vector<vector<string>> station_data = {{station_name, to_string(query_port), "station_port"}};
-                    string station_json = serialize_journey(station_data);
-                    sendto(udp_socket, station_json.c_str(), station_json.size(), 0, (sockaddr*)&sender_addr, sender_len);
-                    cout << "Sent station data to " << inet_ntoa(sender_addr.sin_addr) << ":" << ntohs(sender_addr.sin_port) << endl;
-                } else if (data.find("station_port") != string::npos) {
-                    vector<vector<string>> station_list_data = deserialize_journey(data);
+                if (received_journey[0].back() == "ended" || received_journey[0].back() == "midnight") {
                     lock_guard<mutex> lock(queue_mutex);
-                    if (find_if(station_list.begin(), station_list.end(), [&](const vector<string>& item) { return item[1] == station_list_data[0][1]; }) == station_list.end()) {
-                        station_list.push_back(station_list_data[0]);
-                        station_list_queue.push(station_list);
-                    }
-                    cout << "Updated station list: ";
-                    for (auto& station : station_list) {
-                        cout << station[0] << " ";
-                    }
-                    cout << endl;
-                } else if (data.find("odyssey") != string::npos) {
-                    vector<vector<string>> received_journey = deserialize_journey(data);
-                    if (received_journey[0].back() == "ended" || received_journey[0].back() == "midnight") {
-                        lock_guard<mutex> lock(queue_mutex);
-                        journey_list_queue.push(received_journey);
-                        cout << "Journey completed: " << serialize_journey(received_journey) << endl;
-                    } else {
-                        temp_list = received_journey;
-                        journey = temp_list;
-                        visited = temp_list[1];
-                        int midnight = 0;
-                        for (auto& sublist : timetable) {
-                            string time_in_sublist = sublist[0];
-                            auto time_in_timetable_datetime = parse_time(time_in_sublist);
-                            auto latest_time_datetime = parse_time(temp_list.back()[3]);
-                            if (time_in_timetable_datetime >= latest_time_datetime) {
-                                midnight++;
-                                if (find(visited.begin(), visited.end(), sublist.back()) != visited.end()) {
-                                    continue;
-                                }
-                                temp_list.push_back(sublist);
-                                temp_list[1].push_back(sublist.back());
-                                if (temp_list.back().back() == temp_list[0][2]) {
-                                    temp_list[0].push_back("ended");
-                                    string journey_data = serialize_journey(temp_list);
-                                    sendto(udp_socket, journey_data.c_str(), journey_data.size(), 0, (sockaddr*)&sender_addr, sizeof(sender_addr));
-                                    visited.push_back(temp_list.back().back());
-                                    temp_list = journey;
-                                    cout << "Journey ended: " << serialize_journey(temp_list) << endl;
-                                } else {
-                                    for (auto& port : station_list) {
-                                        if (port[0] == temp_list.back().back()) {
-                                            temp_list[2].push_back(to_string(query_port));
-                                            string journey_data = serialize_journey(temp_list);
-                                            sockaddr_in adjacent_addr;
-                                            adjacent_addr.sin_family = AF_INET;
-                                            adjacent_addr.sin_port = htons(stoi(port[1]));
-                                            inet_pton(AF_INET, host_ip.c_str(), &adjacent_addr.sin_addr);
-                                            sendto(udp_socket, journey_data.c_str(), journey_data.size(), 0, (sockaddr*)&adjacent_addr, sizeof(adjacent_addr));
-                                            visited.push_back(port[0]);
-                                            temp_list = journey;
-                                            cout << "Sent journey data to " << port[0] << endl;
-                                        }
+                    journey_list_queue.push(received_journey);
+                    cout << "[DEBUG] Journey completed and added to queue: " << serialize_journey2(received_journey) << endl;
+                } else {
+                    temp_list = received_journey;
+                    journey = temp_list;
+                    visited = temp_list[1];
+                    int midnight = 0;
+
+                    for (auto& sublist : timetable) {
+                        string time_in_sublist = sublist[0];
+                        auto time_in_timetable_datetime = parse_time(time_in_sublist);
+                        auto latest_time_datetime = parse_time(temp_list.back()[3]);
+
+                        if (time_in_timetable_datetime >= latest_time_datetime) {
+                            midnight++;
+                            if (find(visited.begin(), visited.end(), sublist.back()) != visited.end()) {
+                                continue;
+                            }
+                            temp_list.push_back(sublist);
+                            temp_list[1].push_back(sublist.back());
+
+                            cout << "[DEBUG] Updated temp_list: " << serialize_journey2(temp_list) << endl;
+                            cout << "[DEBUG] temp_list.back().back(): " << temp_list.back().back() << ", destination: " << temp_list[0][2] << endl;
+
+                            std::string temp1 = temp_list.back().back();
+                            std::string temp2 = temp_list[0][2];
+                            trim(temp1);
+                            trim(temp2);
+
+                                if (temp1 == temp2) {
+                                temp_list[0].push_back("ended");
+                                string journey_data = serialize_journey2(temp_list);
+                                sendto(udp_socket, journey_data.c_str(), journey_data.size(), 0, (sockaddr*)&sender_addr, sizeof(sender_addr));
+                                visited.push_back(temp_list.back().back());
+                                temp_list = journey;
+                                cout << "[DEBUG] Journey ended: " << serialize_journey2(temp_list) << endl;
+                            } else {
+                                for (auto& port : station_list) {
+                                    cout << "[DEBUG] Checking station: " << port[0] << " on port: " << port[1] << endl;
+
+                                    string trimmed_port = port[0];
+                                    string trimmed_journey_back = journey.back().back();
+                                    trim(trimmed_port);
+                                    trim(trimmed_journey_back);
+
+                                    // Compare the trimmed strings
+                                    if (trimmed_port == trimmed_journey_back) {
+                                        cout << "[DEBUG] Matched station: " << port[0] << " on port: " << port[1] << endl;
+                                        string journey_data = serialize_journey2(journey);
+                                        sockaddr_in adjacent_addr;
+                                        adjacent_addr.sin_family = AF_INET;
+                                        adjacent_addr.sin_port = htons(stoi(port[1]));
+                                        inet_pton(AF_INET, host_ip.c_str(), &adjacent_addr.sin_addr);
+
+                                        cout << "[DEBUG] Sending journey data to adjacent station " << port[0] << " on port " << port[1] << endl;
+                                        ssize_t udp_bytes_sent = sendto(udp_socket, journey_data.c_str(), journey_data.size(), 0, (sockaddr*)&adjacent_addr, sizeof(adjacent_addr));
+                                        cout << "[DEBUG] Sent " << udp_bytes_sent << " bytes via UDP to port " << port[1] << endl;
+
+                                        cout << "[DEBUG] Current journey: " << serialize_journey2(journey) << endl;
+
+                                        visited.push_back(port[0]);
+                                        journey = hard_temp;
                                     }
                                 }
                             }
                         }
-                        if (midnight == 0) {
-                            temp_list[0].push_back("midnight");
-                            string journey_data = serialize_journey(temp_list);
-                            sendto(udp_socket, journey_data.c_str(), journey_data.size(), 0, (sockaddr*)&sender_addr, sizeof(sender_addr));
-                            cout << "Journey past midnight: " << serialize_journey(temp_list) << endl;
-                        }
+                    }
+
+                    if (midnight == 0) {
+                        temp_list[0].push_back("midnight");
+                        string journey_data = serialize_journey2(temp_list);
+                        sendto(udp_socket, journey_data.c_str(), journey_data.size(), 0, (sockaddr*)&sender_addr, sizeof(sender_addr));
+                        cout << "[DEBUG] Journey past midnight: " << serialize_journey2(temp_list) << endl;
                     }
                 }
             }
-        } catch (const exception& e) {
-            cerr << "Error in handle_udp: " << e.what() << endl;
         }
+    } catch (const exception& e) {
+        cerr << "[ERROR] Error in handle_udp: " << e.what() << endl;
     }
+}
+
+
+
+string serialize_journey2(const vector<vector<string>>& journey_data) {
+    stringstream ss;
+    for (const auto& row : journey_data) {
+        for (const auto& item : row) {
+            ss << item << ",";
+        }
+        ss.seekp(-1, ss.cur);  // Remove the last comma
+        ss << ";";
+    }
+    string result = ss.str();
+    result.pop_back();  // Remove the last semicolon
+    return result;
+}
+
+vector<vector<string>> deserialize_journey2(const string& data) {
+    vector<vector<string>> journey_data;
+    stringstream ss(data);
+    string row;
+    while (getline(ss, row, ';')) {
+        vector<string> journey_row;
+        stringstream row_ss(row);
+        string item;
+        while (getline(row_ss, item, ',')) {
+            journey_row.push_back(item);
+        }
+        journey_data.push_back(journey_row);
+    }
+    return journey_data;
+}
+
+
+
 
     void load_timetable() {
         ifstream file(timetable_filename);

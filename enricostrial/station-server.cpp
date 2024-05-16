@@ -33,85 +33,86 @@ public:
     }
 
     void run() {
-        // Initialize TCP server
-        tcp_socket = socket(AF_INET, SOCK_STREAM, 0);
-        if (tcp_socket < 0) {
-            cerr << "Error creating TCP socket" << endl;
-            exit(1);
-        }
-        sockaddr_in tcp_server_addr;
-        tcp_server_addr.sin_family = AF_INET;
-        tcp_server_addr.sin_port = htons(browser_port);
-        inet_pton(AF_INET, host_ip.c_str(), &tcp_server_addr.sin_addr);
-        if (bind(tcp_socket, (sockaddr*)&tcp_server_addr, sizeof(tcp_server_addr)) < 0) {
-            cerr << "Error binding TCP socket" << endl;
-            exit(1);
-        }
-        if (listen(tcp_socket, 5) < 0) {
-            cerr << "Error listening on TCP socket" << endl;
-            exit(1);
-        }
+    // Initialize TCP server
+    tcp_socket = socket(AF_INET, SOCK_STREAM, 0);
+    if (tcp_socket < 0) {
+        cerr << "Error creating TCP socket" << endl;
+        exit(1);
+    }
+    sockaddr_in tcp_server_addr;
+    tcp_server_addr.sin_family = AF_INET;
+    tcp_server_addr.sin_port = htons(browser_port);
+    inet_pton(AF_INET, host_ip.c_str(), &tcp_server_addr.sin_addr);
+    if (bind(tcp_socket, (sockaddr*)&tcp_server_addr, sizeof(tcp_server_addr)) < 0) {
+        cerr << "Error binding TCP socket" << endl;
+        exit(1);
+    }
+    if (listen(tcp_socket, 5) < 0) {
+        cerr << "Error listening on TCP socket" << endl;
+        exit(1);
+    }
 
-        // Initialize UDP socket
-        udp_socket = socket(AF_INET, SOCK_DGRAM, 0);
-        if (udp_socket < 0) {
-            cerr << "Error creating UDP socket" << endl;
-            exit(1);
-        }
-        sockaddr_in udp_server_addr;
-        udp_server_addr.sin_family = AF_INET;
-        udp_server_addr.sin_port = htons(query_port);
-        inet_pton(AF_INET, host_ip.c_str(), &udp_server_addr.sin_addr);
-        if (bind(udp_socket, (sockaddr*)&udp_server_addr, sizeof(udp_server_addr)) < 0) {
-            cerr << "Error binding UDP socket" << endl;
-            exit(1);
-        }
+    // Initialize UDP socket
+    udp_socket = socket(AF_INET, SOCK_DGRAM, 0);
+    if (udp_socket < 0) {
+        cerr << "Error creating UDP socket" << endl;
+        exit(1);
+    }
+    sockaddr_in udp_server_addr;
+    udp_server_addr.sin_family = AF_INET;
+    udp_server_addr.sin_port = htons(query_port);
+    inet_pton(AF_INET, host_ip.c_str(), &udp_server_addr.sin_addr);
+    if (bind(udp_socket, (sockaddr*)&udp_server_addr, sizeof(udp_server_addr)) < 0) {
+        cerr << "Error binding UDP socket" << endl;
+        exit(1);
+    }
 
-        cout << "Station Server '" << station_name << "' started. TCP Port: " << browser_port << ", UDP Port: " << query_port << ", Neighbour UDP Ports: ";
+    cout << "Station Server '" << station_name << "' started. TCP Port: " << browser_port << ", UDP Port: " << query_port << ", Neighbour UDP Ports: ";
+    for (int port : adjacent_ports) {
+        cout << port << " ";
+    }
+    cout << endl;
+
+    thread udp_handler(&NetworkServer::handle_udp, this);
+    udp_handler.detach();
+
+    while (station_list.size() != adjacent_ports.size()) {
+        string query_data = "query_station";
         for (int port : adjacent_ports) {
-            cout << port << " ";
+            sockaddr_in neighboring_station_addr;
+            neighboring_station_addr.sin_family = AF_INET;
+            neighboring_station_addr.sin_port = htons(port);
+            inet_pton(AF_INET, host_ip.c_str(), &neighboring_station_addr.sin_addr);
+            sendto(udp_socket, query_data.c_str(), query_data.size(), 0, (sockaddr*)&neighboring_station_addr, sizeof(neighboring_station_addr));
+            this_thread::sleep_for(chrono::seconds(1));
+        }
+
+        if (!station_list_queue.empty()) {
+            lock_guard<mutex> lock(queue_mutex);
+            station_list = station_list_queue.front();
+            station_list_queue.pop();
+        }
+        cout << "station list: ";
+        for (auto& station : station_list) {
+            cout << station[0] << " ";
         }
         cout << endl;
+    }
 
-        thread udp_handler(&NetworkServer::handle_udp, this);
-        udp_handler.detach();
+    thread tcp_handler(&NetworkServer::handle_tcp, this);
+    tcp_handler.detach();
 
-        while (station_list.size() != adjacent_ports.size()) {
-            string query_data = "query_station";
-            for (int port : adjacent_ports) {
-                sockaddr_in neighboring_station_addr;
-                neighboring_station_addr.sin_family = AF_INET;
-                neighboring_station_addr.sin_port = htons(port);
-                inet_pton(AF_INET, host_ip.c_str(), &neighboring_station_addr.sin_addr);
-                sendto(udp_socket, query_data.c_str(), query_data.size(), 0, (sockaddr*)&neighboring_station_addr, sizeof(neighboring_station_addr));
-                this_thread::sleep_for(chrono::seconds(1));
-            }
-
-            if (!station_list_queue.empty()) {
-                lock_guard<mutex> lock(queue_mutex);
-                station_list = station_list_queue.front();
-                station_list_queue.pop();
-            }
-            cout << "station list: ";
-            for (auto& station : station_list) {
-                cout << station[0] << " ";
-            }
-            cout << endl;
-        }
-
-        thread tcp_handler(&NetworkServer::handle_tcp, this);
-        tcp_handler.detach();
-
-        while (true) {
-            this_thread::sleep_for(chrono::seconds(1));
-            auto current_modified_time = get_last_modified_time(timetable_filename);
-            if (current_modified_time != last_modified_time) {
-                last_modified_time = current_modified_time;
-                load_timetable();
-                cout << "Timetable updated" << endl;
-            }
+    while (true) {
+        this_thread::sleep_for(chrono::seconds(1));
+        auto current_modified_time = get_last_modified_time(timetable_filename);
+        if (current_modified_time != last_modified_time) {
+            last_modified_time = current_modified_time;
+            load_timetable();
+            cout << "Timetable updated" << endl;
         }
     }
+}
+
 
 private:
     string station_name;
@@ -196,7 +197,6 @@ void handle_tcp() {
                         journey.push_back(sublist);
                         journey[1].push_back(sublist.back());
 
-                        // Add debugging output to compare journey.back().back() and destination
                         string current_destination = journey.back().back();
                         trim(current_destination);  // Trim the current destination
                         cout << "[DEBUG] Comparing journey destination: " << current_destination << " with target destination: " << destination << endl;
@@ -272,52 +272,40 @@ void handle_tcp() {
 
                 cout << "[DEBUG] Journey completed. Forming response..." << endl;
 
-string response = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nConnection: Closed\r\n\r\n";
-response += "<html><body><h1>Journey from " + station_name + " to " + destination + " at " + start_time + "</h1>\n";
-if (journey_list.empty()) {
-    response += "<p>There is no journey from " + station_name + " to " + destination + " leaving after " + start_time + " today.</p>";
-} else {
-    cout << "[DEBUG] Journey list size: " << journey_list.size() << endl;
-    for (const auto& journey : journey_list) {
-        cout << "[DEBUG] Processing journey with " << journey.size() << " steps." << endl;
-        for (const auto& step : journey) {
-            if (step.size() < 5) {
-                cerr << "[ERROR] Invalid step data: expected at least 5 elements, got " << step.size() << endl;
-                continue;
-            }
-            cout << "[DEBUG] Step details: ";
-            for (const auto& detail : step) {
-                cout << detail << " ";
-            }
-            cout << endl;
-            response += "<p>Catch " + step[1] + " from " + step[2] + ", at time " + step[0] + ", to arrive at " + step[4] + " at time " + step[3] + ".</p>\n";
-        }
-    }
-}
-response += "</body></html>";
+                string response = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nConnection: Closed\r\n\r\n";
+                response += "<!DOCTYPE html><html><body><h1>Journey from " + station_name + " to " + destination + " at " + start_time + "</h1>\n";
+                if (journey_list.empty()) {
+                    response += "<p>There is no journey from " + station_name + " to " + destination + " leaving after " + start_time + " today.</p>";
+                } else {
+                    cout << "[DEBUG] Journey list size: " << journey_list.size() << endl;
+                    for (const auto& journey : journey_list) {
+                        cout << "[DEBUG] Processing journey with " << journey.size() << " steps." << endl;
+                        for (const auto& step : journey) {
+                            if (step.size() < 5) {
+                                cerr << "[ERROR] Invalid step data: expected at least 5 elements, got " << step.size() << endl;
+                                continue;
+                            }
+                            cout << "[DEBUG] step[0]: " << step[0] << " step[1]: " << step[1] << " step[2]: " << step[2] << " step[3]: " << step[3] << " step[4]: " << step[4] << endl;
+                            response += "Catch " + step[1] + " from " + step[2] + ", at time " + step[0] + ", to arrive at " + step[4] + " at time " + step[3] + ".\n";
+                        }
+                    }
+                }
+                response += "</body></html>";
 
-cout << "[DEBUG] Formed response: " << response << endl;
+                cout << "[DEBUG] Formed response: " << response << endl;
 
-ssize_t bytes_sent = send(client_socket, response.c_str(), response.size(), 0);
-if (bytes_sent < 0) {
-    cerr << "[ERROR] Error sending response: " << strerror(errno) << endl;
-} else {
-    cout << "[DEBUG] Sent " << bytes_sent << " bytes" << endl;
-}
+                ssize_t bytes_sent = send(client_socket, response.c_str(), response.size(), 0);
+                if (bytes_sent < 0) {
+                    cerr << "[ERROR] Error sending response: " << strerror(errno) << endl;
+                } else {
+                    cout << "[DEBUG] Sent " << bytes_sent << " bytes" << endl;
+                }
 
-// Check if the entire response was sent
-if (bytes_sent < response.size()) {
-    cerr << "[ERROR] Incomplete response sent. Expected: " << response.size() << ", Sent: " << bytes_sent << endl;
-} else {
-    cout << "[DEBUG] Entire response sent successfully" << endl;
-}
-
-journey_list.clear();
-lock_guard<mutex> lock(queue_mutex);
-while (!journey_list_queue.empty()) {
-    journey_list_queue.pop();
-}
-
+                if (bytes_sent < response.size()) {
+                    cerr << "[ERROR] Incomplete response sent. Expected: " << response.size() << ", Sent: " << bytes_sent << endl;
+                } else {
+                    cout << "[DEBUG] Entire response sent successfully" << endl;
+                }
             } else {
                 string response = "HTTP/1.1 404 Not Found\r\nContent-Type: text/html\r\nConnection: Closed\r\n\r\n";
                 response += "<html><body><h1>404 Not Found</h1></body></html>";
@@ -335,12 +323,6 @@ while (!journey_list_queue.empty()) {
         cerr << "[ERROR] Error in handle_tcp: " << e.what() << endl;
     }
 }
-
-
-
-
-
-
 
 
 // trim from start (in place)

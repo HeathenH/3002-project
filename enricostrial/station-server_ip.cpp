@@ -386,6 +386,8 @@ void handle_udp() {
             char buffer[4096];
             sockaddr_in sender_addr;
             socklen_t sender_len = sizeof(sender_addr);
+            
+
             int bytes_received = recvfrom(udp_socket, buffer, sizeof(buffer), 0, (sockaddr*)&sender_addr, &sender_len);
             if (bytes_received < 0) {
                 cerr << "[ERROR] Error receiving UDP data" << endl;
@@ -415,6 +417,9 @@ void handle_udp() {
             } else if (data.find("odyssey") != string::npos) {
                 cout << "[DEBUG] Received journey data: " << data << endl;
                 vector<vector<string>> received_journey = deserialize_journey(data);
+                vector<vector<string>> temp_temp = deserialize_journey(data);
+
+
                 cout << "[DEBUG] Deserialized journey: " << serialize_journey(received_journey) << endl;
 
                 if (received_journey[0].back() == "ended" || received_journey[0].back() == "midnight") {
@@ -423,7 +428,7 @@ void handle_udp() {
                     cout << "[DEBUG] Journey completed and added to queue: " << serialize_journey(received_journey) << endl;
                 } else {
                     temp_list = received_journey;
-                    journey = temp_list;
+                    journey = temp_temp;
                     visited = temp_list[1];
                     int midnight = 0;
 
@@ -455,6 +460,22 @@ void handle_udp() {
 
                             if (isValidRoute(temp1, temp2, adjacent_stations)) {
                                 if (temp1 == temp2) {
+                                    std::string port = temp_list[2][0];
+                                    // Convert string to integer
+                                    int port_int = std::stoi(port);
+
+                                    // Check if the number is within the range of uint16_t
+                                    if (port_int < 0 || port_int > 65535) {
+                                        throw std::out_of_range("Number out of range for uint16_t");
+                                    }
+
+                                    // Cast to uint16_t
+                                    uint16_t uint16_port = static_cast<uint16_t>(port_int);
+
+                                    memset(&sender_addr, 0, sizeof(sender_addr)); // Zero out the structure
+                                    sender_addr.sin_family = AF_INET;
+                                    sender_addr.sin_port = htons(uint16_port); // Set the specific port number to 2007
+                                    inet_pton(AF_INET, host_ip.c_str(), &sender_addr.sin_addr); // Set the destination IP address
                                     temp_list[0].push_back("ended");
                                     string journey_data = serialize_journey(temp_list);
                                     sendto(udp_socket, journey_data.c_str(), journey_data.size(), 0, (sockaddr*)&sender_addr, sizeof(sender_addr));
@@ -466,13 +487,13 @@ void handle_udp() {
                                         cout << "[DEBUG] Checking station: " << port[0] << " on port: " << port[1] << endl;
 
                                         string trimmed_port = port[0];
-                                        string trimmed_journey_back = journey.back().back();
+                                        string trimmed_journey_back = temp_list.back().back();
                                         trim(trimmed_port);
                                         trim(trimmed_journey_back);
 
                                         if (trimmed_port == trimmed_journey_back) {
                                             cout << "[DEBUG] Matched station: " << port[0] << " on port: " << port[1] << endl;
-                                            string journey_data = serialize_journey(journey);
+                                            string journey_data = serialize_journey(temp_list);
                                             sockaddr_in adjacent_addr;
                                             adjacent_addr.sin_family = AF_INET;
                                             adjacent_addr.sin_port = htons(stoi(port[1]));
@@ -482,10 +503,10 @@ void handle_udp() {
                                             ssize_t udp_bytes_sent = sendto(udp_socket, journey_data.c_str(), journey_data.size(), 0, (sockaddr*)&adjacent_addr, sizeof(adjacent_addr));
                                             cout << "[DEBUG] Sent " << udp_bytes_sent << " bytes via UDP to port " << port[1] << endl;
 
-                                            cout << "[DEBUG] Current journey: " << serialize_journey(journey) << endl;
+                                            cout << "[DEBUG] Current journey: " << serialize_journey(temp_list) << endl;
 
                                             visited.push_back(port[0]);
-                                            journey = hard_temp;
+                                            temp_list = journey;
                                         }
                                     }
                                 }

@@ -1,17 +1,17 @@
 #!/bin/bash
 
-pkill station_server
-pkill station_server
-pkill station_server
-pkill station_server
-pkill station_server
-pkill station_server
-pkill station_server
-pkill station_server
-pkill station_server
-pkill station_server
-pkill station_server
-pkill station_server
-pkill station_server
-pkill station_server
-pkill -f "station_server"
+pkill station-server_ip
+pkill station-server_ip
+pkill station-server_ip
+pkill station-server_ip
+pkill station-server_ip
+pkill station-server_ip
+pkill station-server_ip
+pkill station-server_ip
+pkill station-server_ip
+pkill station-server_ip
+pkill station-server_ip
+pkill station-server_ip
+pkill station-server_ip
+pkill station-server_ip
+pkill -f "station-server_ip"

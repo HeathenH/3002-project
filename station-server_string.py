@@ -25,7 +25,7 @@ class NetworkServer(multiprocessing.Process):
         #### change this to ur pc's IP address. To find ur IP address in Linux type "ifconfig" in ur terminal, if on windows type "ipconfig" on cmd/powershell
         # self.host_ip = "127.0.0.1"
         # Aarif's on Unifi
-        self.host_ip = "10.135.223.145"
+        # self.host_ip = "10.135.223.145"
         ### Aarif's on hotspot ###
         # self.host_ip = "172.20.10.2"
         ### Nico's on Unifi
@@ -33,6 +33,7 @@ class NetworkServer(multiprocessing.Process):
         # My Hotspot
         # self.host_ip = "172.20.10.4"
         ####
+        self.host_ip = self.get_your_ip()
         self.timetable_filename = f"tt-{self.station_name}"
         self.timetable = None
         self.station_list = []
@@ -47,6 +48,16 @@ class NetworkServer(multiprocessing.Process):
         self.visited = [station_name]
         self.counter = 0
         self.last_modified_time = 0
+
+    def get_your_ip(self):
+        try:
+            result = subprocess.run(['hostname', '-I'], capture_output=True, text=True)
+            ip_address = result.stdout.strip()
+            print(f"+++ IP Address: {ip_address} +++")
+            return ip_address
+        except subprocess.CalledProcessError as e:
+            print(f"An error occurred: {e}")
+        return None
 
     def run(self):
         # Load timetable

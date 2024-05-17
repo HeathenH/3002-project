@@ -22,7 +22,7 @@ class NetworkServer(multiprocessing.Process):
         self.adjacent_ips = [addr.split(':')[0] for addr in self.adjacent_addresses]
         self.adjacent_ports = [int(addr.split(':')[1]) for addr in self.adjacent_addresses]
         #### change this to ur pc's IP address. To find ur IP address in Linux type "ifconfig" in ur terminal, if on windows type "ipconfig" on cmd/powershell
-        self.host_ip = "172.20.10.2"
+        self.host_ip = "10.135.223.145"
         ####
         self.timetable_filename = f"tt-{self.station_name}"
         self.timetable = None
@@ -65,7 +65,7 @@ class NetworkServer(multiprocessing.Process):
             query_data = "query_station"
             # for port in self.adjacent_ports:
             for addr in self.adjacent_addresses:
-                neighboring_station_address = (addr.split(":")[0], addr.split(":")[1])
+                neighboring_station_address = (addr.split(":")[0], int(addr.split(":")[1]))
                 print(neighboring_station_address)
                 self.udp_socket.sendto(query_data.encode("utf-8"), neighboring_station_address)
                 time.sleep(1)

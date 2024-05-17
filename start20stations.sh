@@ -1,20 +1,20 @@
-./station-server TerminalA 4001 4002 localhost:4012 localhost:4016 localhost:4024 localhost:4026 localhost:4038 &
-./station-server JunctionB 4003 4004 localhost:4014 localhost:4024 localhost:4032 localhost:4038 &
-./station-server BusportC 4005 4006 localhost:4016 localhost:4020 localhost:4030 localhost:4032 localhost:4038 &
-./station-server StationD 4007 4008 localhost:4012 localhost:4018 &
-./station-server TerminalE 4009 4010 localhost:4022 localhost:4024 &
-./station-server JunctionF 4011 4012 localhost:4002 localhost:4008 localhost:4032 &
-./station-server BusportG 4013 4014 localhost:4004 localhost:4022 localhost:4024 localhost:4038 &
-./station-server StationH 4015 4016 localhost:4002 localhost:4006 localhost:4020 &
-./station-server TerminalI 4017 4018 localhost:4008 localhost:4026 &
-./station-server JunctionJ 4019 4020 localhost:4006 localhost:4016 localhost:4036 localhost:4038 localhost:4040 &
-./station-server BusportK 4021 4022 localhost:4010 localhost:4014 localhost:4024 localhost:4030 localhost:4032 &
-./station-server StationL 4023 4024 localhost:4002 localhost:4004 localhost:4010 localhost:4014 localhost:4022 localhost:4026 localhost:4030 &
-./station-server TerminalM 4025 4026 localhost:4002 localhost:4018 localhost:4024 localhost:4028 localhost:4032 localhost:4036 &
-./station-server JunctionN 4027 4028 localhost:4026 localhost:4036 &
-./station-server BusportO 4029 4030 localhost:4006 localhost:4022 localhost:4024 localhost:4032 &
-./station-server StationP 4031 4032 localhost:4004 localhost:4006 localhost:4012 localhost:4022 localhost:4026 localhost:4030 localhost:4038 &
-./station-server TerminalQ 4033 4034 localhost:4038 &
-./station-server JunctionR 4035 4036 localhost:4020 localhost:4026 localhost:4028 &
-./station-server BusportS 4037 4038 localhost:4002 localhost:4004 localhost:4006 localhost:4014 localhost:4020 localhost:4032 localhost:4034 &
-./station-server StationT 4039 4040 localhost:4020 &
+python3 station-server_aarif.py TerminalA 4001 4002 10.135.223.145:4012 10.135.223.145:4016 10.135.223.145:4024 10.135.223.145:4026 10.135.223.145:4038 
+python3 station-server_aarif.py JunctionB 4003 4004 10.135.223.145:4014 10.135.223.145:4024 10.135.223.145:4032 10.135.223.145:4038 
+python3 station-server_aarif.py BusportC 4005 4006 10.135.223.145:4016 10.135.223.145:4020 10.135.223.145:4030 10.135.223.145:4032 10.135.223.145:4038 
+python3 station-server_aarif.py StationD 4007 4008 10.135.223.145:4012 10.135.223.145:4018 
+python3 station-server_aarif.py TerminalE 4009 4010 10.135.223.145:4022 10.135.223.145:4024 
+python3 station-server_aarif.py JunctionF 4011 4012 10.135.223.145:4002 10.135.223.145:4008 10.135.223.145:4032 
+python3 station-server_aarif.py BusportG 4013 4014 10.135.223.145:4004 10.135.223.145:4022 10.135.223.145:4024 10.135.223.145:4038 
+python3 station-server_aarif.py StationH 4015 4016 10.135.223.145:4002 10.135.223.145:4006 10.135.223.145:4020 
+python3 station-server_aarif.py TerminalI 4017 4018 10.135.223.145:4008 10.135.223.145:4026 
+python3 station-server_aarif.py JunctionJ 4019 4020 10.135.223.145:4006 10.135.223.145:4016 10.135.223.145:4036 10.135.223.145:4038 10.135.223.145:4040 
+python3 station-server_aarif.py BusportK 4021 4022 10.135.223.145:4010 10.135.223.145:4014 10.135.223.145:4024 10.135.223.145:4030 10.135.223.145:4032 
+python3 station-server_aarif.py StationL 4023 4024 10.135.223.145:4002 10.135.223.145:4004 10.135.223.145:4010 10.135.223.145:4014 10.135.223.145:4022 10.135.223.145:4026 10.135.223.145:4030 
+python3 station-server_aarif.py TerminalM 4025 4026 10.135.223.145:4002 10.135.223.145:4018 10.135.223.145:4024 10.135.223.145:4028 10.135.223.145:4032 10.135.223.145:4036 
+python3 station-server_aarif.py JunctionN 4027 4028 10.135.223.145:4026 10.135.223.145:4036 
+python3 station-server_aarif.py BusportO 4029 4030 10.135.223.145:4006 10.135.223.145:4022 10.135.223.145:4024 10.135.223.145:4032 
+python3 station-server_aarif.py StationP 4031 4032 10.135.223.145:4004 10.135.223.145:4006 10.135.223.145:4012 10.135.223.145:4022 10.135.223.145:4026 10.135.223.145:4030 10.135.223.145:4038 
+python3 station-server_aarif.py TerminalQ 4033 4034 10.135.223.145:4038 
+python3 station-server_aarif.py JunctionR 4035 4036 10.135.223.145:4020 10.135.223.145:4026 10.135.223.145:4028 
+python3 station-server_aarif.py BusportS 4037 4038 10.135.223.145:4002 10.135.223.145:4004 10.135.223.145:4006 10.135.223.145:4014 10.135.223.145:4020 10.135.223.145:4032 10.135.223.145:4034 
+python3 station-server_aarif.py StationT 4039 4040 10.135.223.145:4020 

@@ -166,7 +166,6 @@ bool isValidRoute(const std::string& currentStation, const std::string& targetDe
 void handle_tcp() {
     try {
         while (true) {
-            cout << "[DEBUG] Waiting to accept a new connection..." << endl;
 
             sockaddr_in client_addr;
             socklen_t client_len = sizeof(client_addr);
@@ -175,7 +174,6 @@ void handle_tcp() {
                 cerr << "[ERROR] Error accepting connection" << endl;
                 continue;
             }
-            cout << "[DEBUG] Accepted connection from " << inet_ntoa(client_addr.sin_addr) << ":" << ntohs(client_addr.sin_port) << endl;
 
             char buffer[4096];
             int bytes_received = recv(client_socket, buffer, sizeof(buffer), 0);
@@ -186,13 +184,10 @@ void handle_tcp() {
             }
             buffer[bytes_received] = '\0';
             string request(buffer);
-            cout << "[DEBUG] Received request: " << request << endl;
 
             stringstream ss(request);
             string http_method, http_path, http_version;
             ss >> http_method >> http_path >> http_version;
-
-            cout << "[DEBUG] HTTP Method: " << http_method << ", HTTP Path: " << http_path << ", HTTP Version: " << http_version << endl;
 
             if (http_method == "GET" && http_path.find("/?to=") != string::npos) {
                 visited = {station_name};
@@ -202,20 +197,13 @@ void handle_tcp() {
                 hard_temp = journey;
                 journey_list.clear();
 
-                cout << "[DEBUG] Processing journey from " << station_name << " to " << destination << endl;
-
                 for (auto& sublist : timetable) {
                     string time_in_sublist = sublist[0];
                     auto time_in_timetable_datetime = parse_time(time_in_sublist);
                     auto start_time_datetime = parse_time(start_time);
 
-                    cout << "[DEBUG] Checking timetable entry with time " << time_in_sublist << endl;
-
                     if (time_in_timetable_datetime >= start_time_datetime) {
-                        cout << "[DEBUG] Entry is valid as it is after the start time" << endl;
-
                         if (find(visited.begin(), visited.end(), sublist.back()) != visited.end()) {
-                            cout << "[DEBUG] Station " << sublist.back() << " already visited, skipping" << endl;
                             continue;
                         }
 
@@ -228,7 +216,6 @@ void handle_tcp() {
                         }
 
                         if (isValidRoute(next_station, destination, adjacent_stations)) {
-                            cout << "[DEBUG] Adding sublist to journey: ";
                             for (const auto& item : sublist) {
                                 cout << item << " ";
                             }
@@ -239,10 +226,8 @@ void handle_tcp() {
 
                             string current_destination = journey.back().back();
                             trim(current_destination);  // Trim the current destination
-                            cout << "[DEBUG] Comparing journey destination: " << current_destination << " with target destination: " << destination << endl;
 
                             if (current_destination == destination) {
-                                cout << "[DEBUG] Destination " << destination << " reached" << endl;
                                 journey[0].push_back("ended");
                                 journey_list.push_back(journey);
                                 journey = hard_temp;
@@ -251,7 +236,6 @@ void handle_tcp() {
                                 cout << "[DEBUG] Journey not yet completed, checking adjacent stations" << endl;
 
                                 for (auto& port : station_list) {
-                                    cout << "[DEBUG] port[0]: " << port[0] << ", journey.back().back(): " << journey.back().back() << endl;
 
                                     string trimmed_port = port[0];
                                     string trimmed_journey_back = journey.back().back();
@@ -265,9 +249,7 @@ void handle_tcp() {
                                         adjacent_addr.sin_port = htons(stoi(port[1]));
                                         inet_pton(AF_INET, host_ip.c_str(), &adjacent_addr.sin_addr);
 
-                                        cout << "[DEBUG] Sending journey data to adjacent station " << port[0] << " on port " << port[1] << endl;
                                         ssize_t udp_bytes_sent = sendto(udp_socket, journey_data.c_str(), journey_data.size(), 0, (sockaddr*)&adjacent_addr, sizeof(adjacent_addr));
-                                        cout << "[DEBUG] Sent " << udp_bytes_sent << " bytes via UDP to port " << port[1] << endl;
 
                                         visited.push_back(port[0]);
                                         journey = hard_temp;
@@ -286,23 +268,19 @@ void handle_tcp() {
                 while (!journey_completed && wait_counter < 10) { // add a condition to avoid infinite loop
                     {
                         lock_guard<mutex> lock(queue_mutex);
-                        cout << "[DEBUG] Lock acquired, checking journey_list_queue" << endl;
 
                         while (!journey_list_queue.empty()) {
                             journey_list.push_back(journey_list_queue.front());
                             journey_list_queue.pop();
-                            cout << "[DEBUG] Journey added to journey_list" << endl;
                         }
                     }
 
                     if (!journey_list.empty()) {
-                        cout << "[DEBUG] journey_list is not empty, breaking out of the loop" << endl;
                         journey_completed = true;
                         break;
                     }
 
                     wait_counter++;
-                    cout << "[DEBUG] journey_list is still empty, sleeping for 1 second (attempt " << wait_counter << ")" << endl;
                     this_thread::sleep_for(chrono::seconds(1));
                 }
 
@@ -333,9 +311,7 @@ void handle_tcp() {
                 if (journey_list.empty()) {
                     response += "<p>There is no journey from " + station_name + " to " + destination + " leaving after " + start_time + " today.</p>";
                 } else {
-                    cout << "[DEBUG] Journey list size: " << journey_list.size() << endl;
                     for (const auto& journey : journey_list) {
-                        cout << "[DEBUG] Processing journey with " << journey.size() << " steps." << endl;
                         for (const auto& step : journey) {
                             if (step.size() < 5) {
                                 cerr << "[ERROR] Invalid step data: expected at least 5 elements, got " << step.size() << endl;
@@ -347,8 +323,6 @@ void handle_tcp() {
                     }
                 }
                 response += "</body></html>";
-
-                cout << "[DEBUG] Formed response: " << response << endl;
 
                 ssize_t bytes_sent = send(client_socket, response.c_str(), response.size(), 0);
                 if (bytes_sent < 0) {
@@ -421,12 +395,9 @@ void handle_udp() {
                 vector<vector<string>> temp_temp = deserialize_journey(data);
 
 
-                cout << "[DEBUG] Deserialized journey: " << serialize_journey(received_journey) << endl;
-
                 if (received_journey[0].back() == "ended" || received_journey[0].back() == "midnight") {
                     lock_guard<mutex> lock(queue_mutex);
                     journey_list_queue.push(received_journey);
-                    cout << "[DEBUG] Journey completed and added to queue: " << serialize_journey(received_journey) << endl;
                 } else {
                     temp_list = received_journey;
                     journey = temp_temp;
@@ -445,9 +416,6 @@ void handle_udp() {
                             }
                             temp_list.push_back(sublist);
                             temp_list[1].push_back(sublist.back());
-
-                            cout << "[DEBUG] Updated temp_list: " << serialize_journey(temp_list) << endl;
-                            cout << "[DEBUG] temp_list.back().back(): " << temp_list.back().back() << ", destination: " << temp_list[0][2] << endl;
 
                             std::string temp1 = temp_list.back().back();
                             std::string temp2 = temp_list[0][2];
@@ -485,7 +453,6 @@ void handle_udp() {
                                     cout << "[DEBUG] Journey ended: " << serialize_journey(temp_list) << endl;
                                 } else {
                                     for (auto& port : station_list) {
-                                        cout << "[DEBUG] Checking station: " << port[0] << " on port: " << port[1] << endl;
 
                                         string trimmed_port = port[0];
                                         string trimmed_journey_back = temp_list.back().back();
@@ -493,16 +460,13 @@ void handle_udp() {
                                         trim(trimmed_journey_back);
 
                                         if (trimmed_port == trimmed_journey_back) {
-                                            cout << "[DEBUG] Matched station: " << port[0] << " on port: " << port[1] << endl;
                                             string journey_data = serialize_journey(temp_list);
                                             sockaddr_in adjacent_addr;
                                             adjacent_addr.sin_family = AF_INET;
                                             adjacent_addr.sin_port = htons(stoi(port[1]));
                                             inet_pton(AF_INET, host_ip.c_str(), &adjacent_addr.sin_addr);
 
-                                            cout << "[DEBUG] Sending journey data to adjacent station " << port[0] << " on port " << port[1] << endl;
                                             ssize_t udp_bytes_sent = sendto(udp_socket, journey_data.c_str(), journey_data.size(), 0, (sockaddr*)&adjacent_addr, sizeof(adjacent_addr));
-                                            cout << "[DEBUG] Sent " << udp_bytes_sent << " bytes via UDP to port " << port[1] << endl;
 
                                             cout << "[DEBUG] Current journey: " << serialize_journey(temp_list) << endl;
 
@@ -543,12 +507,10 @@ void load_timetable() {
     getline(file, line); // Skip header line #2
 
     while (getline(file, line)) {
-        cout << "[DEBUG] Reading line: " << line << endl;
         stringstream ss(line);
         string item;
         vector<string> row;
         while (getline(ss, item, ',')) {
-            cout << "[DEBUG] Parsed item: " << item << endl;
             row.push_back(item);
         }
         timetable.push_back(row);

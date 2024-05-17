@@ -1,6 +1,6 @@
 #!/bin/bash
 
-./station-server_ip TerminalA 4001 2001 10.135.223.145:2015 &
+./station_server TerminalA 4001 2001 10.135.223.145:2015 &
 sleep 3
 ./station_server JunctionB 4003 2003 172.23.232.118:2009 172.23.232.118:2015 &
 sleep 3

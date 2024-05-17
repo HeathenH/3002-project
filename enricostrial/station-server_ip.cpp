@@ -18,6 +18,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/stat.h>
+#include <ifaddrs.h>
 
 using namespace std;
 
@@ -25,7 +26,7 @@ class NetworkServer {
 public:
     NetworkServer(string station_name, int browser_port, int query_port, vector<pair<string, int>> adjacent_servers)
         : station_name(station_name), browser_port(browser_port), query_port(query_port), adjacent_servers(adjacent_servers) {
-        host_ip = "10.135.223.145";
+        host_ip = get_host_ip();;
         timetable_filename = "tt-" + station_name;
         last_modified_time = 0;
         start_time = "9:00";
@@ -652,6 +653,29 @@ static inline void rtrim(std::string &s) {
 static inline void trim(std::string &s) {
     ltrim(s);
     rtrim(s);
+}
+
+string get_host_ip() {
+    struct ifaddrs* ifap, *ifa;
+    struct sockaddr_in* sa;
+    char* addr;
+
+    if (getifaddrs(&ifap) == 0) {
+        for (ifa = ifap; ifa != NULL; ifa = ifa->ifa_next) {
+            if (ifa->ifa_addr->sa_family == AF_INET) { // check it is IP4
+                sa = (struct sockaddr_in*)ifa->ifa_addr;
+                addr = inet_ntoa(sa->sin_addr); // convert binary to text form
+                // Skip localhost and look for a valid IP
+                if (string(addr) != "127.0.0.1") {
+                    string ip(addr);
+                    freeifaddrs(ifap);
+                    return ip;
+                }
+            }
+        }
+        freeifaddrs(ifap);
+    }
+    return "127.0.0.1"; // Fallback to localhost if no other IP found
 }
 };
 

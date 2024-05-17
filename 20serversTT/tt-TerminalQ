@@ -1,0 +1,19 @@
+# station-name,longitude,latitude
+TerminalQ,115.8200,-31.7200
+# departure-time,route-name,departing-from,arrival-time,arrival-station
+05:01,busQ_S,stopQ,05:55,BusportS
+06:04,busQ_S,stopQ,06:59,BusportS
+07:08,busQ_S,stopQ,08:01,BusportS
+08:14,busQ_S,stopQ,09:07,BusportS
+09:17,busQ_S,stopQ,10:12,BusportS
+10:23,busQ_S,stopQ,11:17,BusportS
+11:28,busQ_S,stopQ,12:22,BusportS
+12:33,busQ_S,stopQ,13:28,BusportS
+13:40,busQ_S,stopQ,14:33,BusportS
+14:44,busQ_S,stopQ,15:39,BusportS
+15:52,busQ_S,stopQ,16:47,BusportS
+16:56,busQ_S,stopQ,17:50,BusportS
+17:59,busQ_S,stopQ,18:53,BusportS
+19:03,busQ_S,stopQ,19:57,BusportS
+20:08,busQ_S,stopQ,21:02,BusportS
+21:11,busQ_S,stopQ,22:06,BusportS

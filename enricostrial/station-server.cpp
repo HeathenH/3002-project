@@ -25,7 +25,7 @@ class NetworkServer {
 public:
     NetworkServer(string station_name, int browser_port, int query_port, vector<int> adjacent_ports)
         : station_name(station_name), browser_port(browser_port), query_port(query_port), adjacent_ports(adjacent_ports) {
-        host_ip = "127.0.0.1";
+        host_ip = "172.20.10.2";
         timetable_filename = "tt-" + station_name;
         last_modified_time = 0;
         start_time = "9:00";

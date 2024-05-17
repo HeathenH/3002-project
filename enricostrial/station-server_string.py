@@ -6,6 +6,7 @@ import time
 from datetime import datetime
 import copy
 import os
+import ast
 
 # Harrison Harun | 23347644
 # Aarif Lamat | 23628374
@@ -13,20 +14,32 @@ import os
 # Nicholas Mulyawan | 23044774
 
 class NetworkServer(multiprocessing.Process):
-    def __init__(self, station_name, browser_port, query_port, adjacent_ports):
+    def __init__(self, station_name, browser_port, query_port, adjacent_addrs):
         super().__init__()
         self.station_name = station_name
         self.browser_port = int(browser_port)
         self.query_port = int(query_port)
-        self.adjacent_ports = [int(port_str) for port_str in adjacent_ports]
-        self.host_ip = "127.0.0.1"
+        self.adjacent_addresses = adjacent_addrs
+        self.adjacent_ips = [addr.split(':')[0] for addr in self.adjacent_addresses]
+        self.adjacent_ports = [int(addr.split(':')[1]) for addr in self.adjacent_addresses]
+        #### change this to ur pc's IP address. To find ur IP address in Linux type "ifconfig" in ur terminal, if on windows type "ipconfig" on cmd/powershell
+        # self.host_ip = "127.0.0.1"
+        # Aarif's on Unifi
+        # self.host_ip = "10.135.223.145"
+        ### Aarif's on hotspot ###
+        self.host_ip = "172.20.10.2"
+        ### Nico's on Unifi
+        #self.host_ip = "10.135.102.29"
+        # My Hotspot
+        # self.host_ip = "172.20.10.4"
+        ####
         self.timetable_filename = f"tt-{self.station_name}"
         self.timetable = None
         self.station_list = []
         self.station_list_queue = multiprocessing.Queue()  # Queue for station list updates
         self.journey_list_queue = multiprocessing.Queue()
         self.destination = None
-        self.journey = [["odyssey", query_port, "destination"], [station_name], [query_port]]
+        self.journey = [["odyssey", query_port, "destination"], [station_name], [query_port]] 
         self.journey_list = []
         self.temp_list = []
         self.hard_temp = []
@@ -50,24 +63,30 @@ class NetworkServer(multiprocessing.Process):
         self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.udp_socket.bind((self.host_ip, self.query_port))
 
-        print(f"Station Server '{self.station_name}' started. TCP Port: {self.browser_port}, UDP Port: {self.query_port}, Neighbour UDP Ports: {self.adjacent_ports}")
+        print(f"Station Server '{self.station_name}' started. TCP Port: {self.browser_port}, UDP Port: {self.query_port}, Neighbours (IP:UDP Port): {self.adjacent_addresses}")
         
         # Start UDP handler
         udp_handler = multiprocessing.Process(target=self.handle_udp)
         udp_handler.start()
+        print(f"station list: {self.station_list}")
+
 
         # Ping adjacent ports for their station name and port number
         while len(self.station_list) != len(self.adjacent_ports):
             query_data = "query_station"
-            for port in self.adjacent_ports:
-                neighboring_station_address = ("127.0.0.1", port)
+
+            # for port in self.adjacent_ports:
+            for addr in self.adjacent_addresses:
+                neighboring_station_address = (addr.split(":")[0], int(addr.split(":")[1]))
                 self.udp_socket.sendto(query_data.encode("utf-8"), neighboring_station_address)
                 time.sleep(1)
 
+
             if not self.station_list_queue.empty():
                 self.station_list = self.station_list_queue.get()
+            # print("STILL GOING!!!")
             print(f"station list: {self.station_list}")
-            
+                
         
         try:
             tcp_handler = multiprocessing.Process(target=self.handle_tcp)
@@ -75,9 +94,11 @@ class NetworkServer(multiprocessing.Process):
             while True:
                 # Check for timetable file changes
                 current_modified_time = os.stat(self.timetable_filename).st_mtime
+                # print("EXDEEDEE")
                 #print(f"1: {current_modified_time}")
                 #print(f"2: {self.last_modified_time}")
                 if current_modified_time != self.last_modified_time:
+                    print("WAHOO")
                     # Timetable file has changed
                     self.last_modified_time = current_modified_time
                     self.load_timetable()
@@ -93,7 +114,10 @@ class NetworkServer(multiprocessing.Process):
     def handle_tcp(self):
         try:
             while True:
+                print("xdd")
                 tcp_conn, _ = self.tcp_socket.accept()
+                # START TIMER HERE
+                print("issue here ^")
                 request_data = tcp_conn.recv(4096).decode("utf-8")
                 if request_data:
                     http_method, http_path, _ = request_data.split(" ", 2)
@@ -140,16 +164,24 @@ class NetworkServer(multiprocessing.Process):
                                                 print(f"station name: {station_name}")
                                                 print(f"{self.journey[-1][-1]}")
                                                 journey_data = self.journey
-                                                adjacent_addr = ("127.0.0.1", port_number)
-                                                self.udp_socket.sendto(json.dumps(journey_data).encode("utf-8"), adjacent_addr)
+                                                # find corresponding ip to the port_number
+                                                adj_ip = ""
+                                                for address in self.adjacent_addresses:
+                                                    if int(address.split(':')[1]) == port_number:
+                                                        adj_ip = address.split(":")[0]
+                                                adjacent_addr = (adj_ip, port_number)
+                                                # json
+                                                ### CONVERT LIST TO STRING FOR COMMUNICATING BETWEEN SERVERS ###
+                                                journey_data_str = '|'.join([str(item) for item in self.journey])
+                                                self.udp_socket.sendto(journey_data_str.encode("utf-8"), adjacent_addr)
                                                 self.visited.append(station_name)
                                                 print(f"{journey_data}")
-                                                print(f"sent journey data to {port_number}")
+                                                print(f"sent journey data to {adjacent_addr}")
                                                 self.journey = self.hard_temp
 
                         print("end of timetable")
                         while len(journey_list) < 1:
-                            time.sleep(2)
+                            time.sleep(5)
                             while not self.journey_list_queue.empty():
                                 journey_list.append(self.journey_list_queue.get())
                                 
@@ -218,12 +250,13 @@ class NetworkServer(multiprocessing.Process):
             while True:
                 data, addr = self.udp_socket.recvfrom(4096)
                 if "query_station" in data.decode("utf-8"):
-                    station_data = [self.station_name, self.query_port, "station_port"]
-                    station_json = json.dumps(station_data)
-                    self.udp_socket.sendto(station_json.encode("utf-8"), addr)
+                    # station_data = [self.station_name, self.query_port, "station_port"]
+                    station_data_string = self.station_name + "," + str(self.query_port) + "," + "station_port"
+                    # station_json = json.dumps(station_data)
+                    self.udp_socket.sendto(station_data_string.encode("utf-8"), addr)
                     print(f"sent station data to {addr}")
                 elif "station_port" in data.decode("utf-8"):
-                    station_list = json.loads(data.decode("utf-8"))
+                    station_list = data.decode("utf-8").split(",")
                     if self.station_list:
                         for item in self.station_list:
                             if item[1] == station_list[1]:
@@ -238,13 +271,23 @@ class NetworkServer(multiprocessing.Process):
                     
                     if "ended" in data.decode("utf-8") or "midnight" in data.decode("utf-8"):
                     
-                        journey_list = json.loads(data.decode("utf-8"))
+                        # journey_list = json.loads(data.decode("utf-8"))
+                        # Split the string by '|'
+                        split_strings = data.decode("utf-8").split('|')
+
+                        # Convert each split string back to its list format
+                        journey_list = [ast.literal_eval(item) for item in split_strings]
                         if len(journey_list[2]) > 1:
                             journey_list[2].pop(-1)
                             port_number = int(journey_list[2][-1])
-                            journey_data = journey_list
-                            address = ("127.0.0.1", port_number)
-                            self.udp_socket.sendto(json.dumps(journey_data).encode("utf-8"), address)
+                            # journey_data = journey_list
+                            journey_data_str = '|'.join([str(item) for item in journey_list])
+                            adj_ip = ""
+                            for address in self.adjacent_addresses:
+                                if int(address.split(':')[1]) == port_number:
+                                    adj_ip = address.split(":")[0]
+                            adjacent_addr = (adj_ip, port_number)
+                            self.udp_socket.sendto(journey_data_str.encode("utf-8"), adjacent_addr)
                         else:
                             print("end pinged")
                             self.journey_list = []
@@ -253,7 +296,12 @@ class NetworkServer(multiprocessing.Process):
                             print(self.journey_list)
                         
                     else:
-                        self.temp_list = json.loads(data.decode("utf-8"))
+                        # self.temp_list = json.loads(data.decode("utf-8"))
+                        # Split the string by '|'
+                        split_strings = data.decode("utf-8").split('|')
+
+                        # Convert each split string back to its list format
+                        self.temp_list = [ast.literal_eval(item) for item in split_strings]
                         self.journey = copy.deepcopy(self.temp_list)
                         self.visited = self.temp_list[1]
                         midnight = 0
@@ -278,13 +326,19 @@ class NetworkServer(multiprocessing.Process):
                                         self.temp_list[0].append("ended")
                                         print(f"journey ended {self.temp_list[-1][-1]}")
                                         print(f"journey ended {self.temp_list[0][2]}")
-                                        journey_data = self.temp_list
+                                        # journey_data = self.temp_list
                                         port_number = int(self.temp_list[2][-1])
-                                        address = ("127.0.0.1", port_number)
-                                        self.udp_socket.sendto(json.dumps(journey_data).encode("utf-8"), address)
+                                        adj_ip = ""
+                                        for address in self.adjacent_addresses:
+                                            if int(address.split(':')[1]) == port_number:
+                                                adj_ip = address.split(":")[0]
+                                        adjacent_addr = (adj_ip, port_number)
+                                        journey_data_str = '|'.join([str(item) for item in self.temp_list])
+                                        # self.udp_socket.sendto(json.dumps(journey_data).encode("utf-8"), adjacent_addr)
+                                        self.udp_socket.sendto(journey_data_str.encode("utf-8"), adjacent_addr)
                                         self.visited.append(self.temp_list[-1][-1])
                                         self.temp_list = self.journey
-                                        print(f"sent final {journey_data} to {address}")
+                                        print(f"sent final {journey_data_str} to {adjacent_addr}")
                                     else:
                                         for port in self.station_list:
                                             station_name = port[0]
@@ -292,22 +346,35 @@ class NetworkServer(multiprocessing.Process):
                                             print(f"attempt to send {self.temp_list} to {station_name}")
                                             if station_name == self.temp_list[-1][-1]:
                                                 self.temp_list[2].append(self.query_port)
-                                                journey_data = self.temp_list
-                                                adjacent_addr = ("127.0.0.1", port_number)
-                                                self.udp_socket.sendto(json.dumps(journey_data).encode("utf-8"), adjacent_addr)
+                                                # journey_data = self.temp_list
+                                                adj_ip = ""
+                                                for address in self.adjacent_addresses:
+                                                    if int(address.split(':')[1]) == port_number:
+                                                        adj_ip = address.split(":")[0]
+                                                adjacent_addr = (adj_ip, port_number)
+                                                journey_data_str = '|'.join([str(item) for item in self.temp_list])
+                                                # self.udp_socket.sendto(json.dumps(journey_data).encode("utf-8"), adjacent_addr)
+                                                self.udp_socket.sendto(journey_data_str.encode("utf-8"), adjacent_addr)
                                                 self.visited.append(station_name)
                                                 self.temp_list = self.journey
-                                                print(f"sent {journey_data} to {adjacent_addr}")
+                                                print(f"sent {journey_data_str} to {adjacent_addr}")
                         
                         print("end of timetable")
                         # Checks if its past midnight
                         if midnight == 0:
                             print("midnight")
                             self.temp_list[0].append("midnight")
-                            journey_data = self.temp_list
+                            # journey_data = self.temp_list
+                            journey_data_str = '|'.join([str(item) for item in self.temp_list])
                             port_number = int(self.temp_list[2][-1])
-                            address = ("127.0.0.1", port_number)
-                            self.udp_socket.sendto(json.dumps(journey_data).encode("utf-8"), address)
+                            adj_ip = ""
+                            for address in self.adjacent_addresses:
+                                if int(address.split(':')[1]) == port_number:
+                                    adj_ip = address.split(":")[0]
+                            adjacent_addr = (adj_ip, port_number)
+
+                            # self.udp_socket.sendto(json.dumps(journey_data).encode("utf-8"), adjacent_addr)
+                            self.udp_socket.sendto(journey_data_str.encode("utf-8"), adjacent_addr)
                         
         except KeyboardInterrupt:
             pass
@@ -330,10 +397,17 @@ if __name__ == "__main__":
     station_name = sys.argv[1]
     browser_port = sys.argv[2]
     query_port = sys.argv[3]
-    adjacent_ports = [int(port_str.split(':')[1]) for port_str in sys.argv[4:]]
+    # adjacent_ports = [int(port_str.split(':')[1]) for port_str in sys.argv[4:]]
+    adjacent_addrs = sys.argv[4:]
+    print(adjacent_addrs)
 
     # Create and start the NetworkServer instance
-    server = NetworkServer(station_name, browser_port, query_port, adjacent_ports)
+    server = NetworkServer(station_name, browser_port, query_port, adjacent_addrs)
     server.start()
+    if server.is_alive():
+        print("Child process is still running.")
+    else:
+        print("Child process has terminated.")
+
     server.join()
 

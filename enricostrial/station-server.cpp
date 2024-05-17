@@ -258,7 +258,7 @@ void handle_tcp() {
                                     trim(trimmed_journey_back);
 
                                     if (trimmed_port == trimmed_journey_back) {
-                                        string journey_data = serialize_journey2(journey);
+                                        string journey_data = serialize_journey(journey);
                                         sockaddr_in adjacent_addr;
                                         adjacent_addr.sin_family = AF_INET;
                                         adjacent_addr.sin_port = htons(stoi(port[1]));
@@ -379,8 +379,6 @@ void handle_tcp() {
     }
 }
 
-
-
 void handle_udp() {
     try {
         cout << "[DEBUG] handle_udp is called" << endl;
@@ -399,11 +397,11 @@ void handle_udp() {
 
             if (data == "query_station") {
                 vector<vector<string>> station_data = {{station_name, to_string(query_port), "station_port"}};
-                string station_json = serialize_journey2(station_data);
+                string station_json = serialize_journey(station_data);
                 sendto(udp_socket, station_json.c_str(), station_json.size(), 0, (sockaddr*)&sender_addr, sender_len);
                 cout << "[DEBUG] Sent station data to " << inet_ntoa(sender_addr.sin_addr) << ":" << ntohs(sender_addr.sin_port) << endl;
             } else if (data.find("station_port") != string::npos) {
-                vector<vector<string>> station_list_data = deserialize_journey2(data);
+                vector<vector<string>> station_list_data = deserialize_journey(data);
                 lock_guard<mutex> lock(queue_mutex);
                 if (find_if(station_list.begin(), station_list.end(), [&](const vector<string>& item) { return item[1] == station_list_data[0][1]; }) == station_list.end()) {
                     station_list.push_back(station_list_data[0]);
@@ -416,13 +414,13 @@ void handle_udp() {
                 cout << endl;
             } else if (data.find("odyssey") != string::npos) {
                 cout << "[DEBUG] Received journey data: " << data << endl;
-                vector<vector<string>> received_journey = deserialize_journey2(data);
-                cout << "[DEBUG] Deserialized journey: " << serialize_journey2(received_journey) << endl;
+                vector<vector<string>> received_journey = deserialize_journey(data);
+                cout << "[DEBUG] Deserialized journey: " << serialize_journey(received_journey) << endl;
 
                 if (received_journey[0].back() == "ended" || received_journey[0].back() == "midnight") {
                     lock_guard<mutex> lock(queue_mutex);
                     journey_list_queue.push(received_journey);
-                    cout << "[DEBUG] Journey completed and added to queue: " << serialize_journey2(received_journey) << endl;
+                    cout << "[DEBUG] Journey completed and added to queue: " << serialize_journey(received_journey) << endl;
                 } else {
                     temp_list = received_journey;
                     journey = temp_list;
@@ -442,7 +440,7 @@ void handle_udp() {
                             temp_list.push_back(sublist);
                             temp_list[1].push_back(sublist.back());
 
-                            cout << "[DEBUG] Updated temp_list: " << serialize_journey2(temp_list) << endl;
+                            cout << "[DEBUG] Updated temp_list: " << serialize_journey(temp_list) << endl;
                             cout << "[DEBUG] temp_list.back().back(): " << temp_list.back().back() << ", destination: " << temp_list[0][2] << endl;
 
                             std::string temp1 = temp_list.back().back();
@@ -458,11 +456,11 @@ void handle_udp() {
                             if (isValidRoute(temp1, temp2, adjacent_stations)) {
                                 if (temp1 == temp2) {
                                     temp_list[0].push_back("ended");
-                                    string journey_data = serialize_journey2(temp_list);
+                                    string journey_data = serialize_journey(temp_list);
                                     sendto(udp_socket, journey_data.c_str(), journey_data.size(), 0, (sockaddr*)&sender_addr, sizeof(sender_addr));
                                     visited.push_back(temp_list.back().back());
                                     temp_list = journey;
-                                    cout << "[DEBUG] Journey ended: " << serialize_journey2(temp_list) << endl;
+                                    cout << "[DEBUG] Journey ended: " << serialize_journey(temp_list) << endl;
                                 } else {
                                     for (auto& port : station_list) {
                                         cout << "[DEBUG] Checking station: " << port[0] << " on port: " << port[1] << endl;
@@ -474,7 +472,7 @@ void handle_udp() {
 
                                         if (trimmed_port == trimmed_journey_back) {
                                             cout << "[DEBUG] Matched station: " << port[0] << " on port: " << port[1] << endl;
-                                            string journey_data = serialize_journey2(journey);
+                                            string journey_data = serialize_journey(journey);
                                             sockaddr_in adjacent_addr;
                                             adjacent_addr.sin_family = AF_INET;
                                             adjacent_addr.sin_port = htons(stoi(port[1]));
@@ -484,7 +482,7 @@ void handle_udp() {
                                             ssize_t udp_bytes_sent = sendto(udp_socket, journey_data.c_str(), journey_data.size(), 0, (sockaddr*)&adjacent_addr, sizeof(adjacent_addr));
                                             cout << "[DEBUG] Sent " << udp_bytes_sent << " bytes via UDP to port " << port[1] << endl;
 
-                                            cout << "[DEBUG] Current journey: " << serialize_journey2(journey) << endl;
+                                            cout << "[DEBUG] Current journey: " << serialize_journey(journey) << endl;
 
                                             visited.push_back(port[0]);
                                             journey = hard_temp;
@@ -497,9 +495,9 @@ void handle_udp() {
 
                     if (midnight == 0) {
                         temp_list[0].push_back("midnight");
-                        string journey_data = serialize_journey2(temp_list);
+                        string journey_data = serialize_journey(temp_list);
                         sendto(udp_socket, journey_data.c_str(), journey_data.size(), 0, (sockaddr*)&sender_addr, sizeof(sender_addr));
-                        cout << "[DEBUG] Journey past midnight: " << serialize_journey2(temp_list) << endl;
+                        cout << "[DEBUG] Journey past midnight: " << serialize_journey(temp_list) << endl;
                     }
                 }
             }
@@ -509,29 +507,90 @@ void handle_udp() {
     }
 }
 
-string serialize_journey2(const vector<vector<string>>& journey_data) {
+void load_timetable() {
+    ifstream file(timetable_filename);
+    if (!file.is_open()) {
+        cerr << "Timetable file '" << timetable_filename << "' not found for station '" << station_name << "'" << endl;
+        return;
+    }
+    timetable.clear();
+    string line;
+
+    // Skip the first two lines
+    getline(file, line); // Skip header line #1
+    getline(file, line); // Skip header line #2
+
+    while (getline(file, line)) {
+        cout << "[DEBUG] Reading line: " << line << endl;
+        stringstream ss(line);
+        string item;
+        vector<string> row;
+        while (getline(ss, item, ',')) {
+            cout << "[DEBUG] Parsed item: " << item << endl;
+            row.push_back(item);
+        }
+        timetable.push_back(row);
+    }
+    file.close();
+    
+    // Print the loaded timetable for verification
+    cout << "[DEBUG] Timetable loaded for station '" << station_name << "'" << endl;
+    for (const auto& row : timetable) {
+        for (const auto& item : row) {
+            cout << "[DEBUG] Stored item: " << item << " ";
+        }
+        cout << endl;
+    }
+}
+
+time_t get_last_modified_time(const string& filename) {
+    struct stat file_stat;
+    if (stat(filename.c_str(), &file_stat) == -1) {
+        return 0;
+    }
+    return file_stat.st_mtime;
+}
+
+static time_t parse_time(const string& time_str) {
+    tm time_tm = {};
+    strptime(time_str.c_str(), "%H:%M", &time_tm);
+    return mktime(&time_tm);
+}
+
+string serialize_journey(const vector<vector<string>>& journey_data) {
     stringstream ss;
     for (const auto& row : journey_data) {
+        ss << "[";
         for (const auto& item : row) {
-            ss << item << ",";
+            ss << "'" << item << "',";
         }
-        ss.seekp(-1, ss.cur);  // Remove the last comma
-        ss << ";";
+        if (!row.empty()) {
+            ss.seekp(-1, ss.cur);  // Remove the last comma
+        }
+        ss << "]|";
     }
     string result = ss.str();
-    result.pop_back();  // Remove the last semicolon
+    if (!result.empty()) {
+        result.pop_back();  // Remove the last pipe character
+    }
     return result;
 }
 
-vector<vector<string>> deserialize_journey2(const string& data) {
+
+vector<vector<string>> deserialize_journey(const string& data) {
     vector<vector<string>> journey_data;
     stringstream ss(data);
     string row;
-    while (getline(ss, row, ';')) {
+    while (getline(ss, row, '|')) {
         vector<string> journey_row;
         stringstream row_ss(row);
         string item;
         while (getline(row_ss, item, ',')) {
+            // Remove leading and trailing whitespace and single quotes
+            item.erase(remove(item.begin(), item.end(), '['), item.end());
+            item.erase(remove(item.begin(), item.end(), ']'), item.end());
+            item.erase(remove(item.begin(), item.end(), '\''), item.end());
+            trim(item);
             journey_row.push_back(item);
         }
         journey_data.push_back(journey_row);
@@ -540,139 +599,39 @@ vector<vector<string>> deserialize_journey2(const string& data) {
 }
 
 
-
-    void load_timetable() {
-        ifstream file(timetable_filename);
-        if (!file.is_open()) {
-            cerr << "Timetable file '" << timetable_filename << "' not found for station '" << station_name << "'" << endl;
-            return;
-        }
-        timetable.clear();
-        string line;
-
-        // Skip the first two lines
-        getline(file, line); // Skip header line #1
-        getline(file, line); // Skip header line #2
-
-        while (getline(file, line)) {
-            cout << "[DEBUG] Reading line: " << line << endl;
-            stringstream ss(line);
-            string item;
-            vector<string> row;
-            while (getline(ss, item, ',')) {
-                cout << "[DEBUG] Parsed item: " << item << endl;
-                row.push_back(item);
-            }
-            timetable.push_back(row);
-        }
-        file.close();
-        
-        // Print the loaded timetable for verification
-        cout << "[DEBUG] Timetable loaded for station '" << station_name << "'" << endl;
-        for (const auto& row : timetable) {
-            for (const auto& item : row) {
-                cout << "[DEBUG] Stored item: " << item << " ";
+void print_journey_list(const vector<vector<vector<string>>>& journey_list) {
+    cout << "[DEBUG] Journey List:" << endl;
+    for (const auto& journey : journey_list) {
+        cout << "[DEBUG] Journey:" << endl;
+        for (const auto& step : journey) {
+            for (const auto& item : step) {
+                cout << "[DEBUG] " << item << " ";
             }
             cout << endl;
         }
+        cout << "[DEBUG] -----" << endl;
     }
+}
 
-    time_t get_last_modified_time(const string& filename) {
-        struct stat file_stat;
-        if (stat(filename.c_str(), &file_stat) == -1) {
-            return 0;
-        }
-        return file_stat.st_mtime;
-    }
+// trim from start (in place)
+static inline void ltrim(std::string &s) {
+    s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch) {
+        return !std::isspace(ch);
+    }));
+}
 
-    static time_t parse_time(const string& time_str) {
-        tm time_tm = {};
-        strptime(time_str.c_str(), "%H:%M", &time_tm);
-        return mktime(&time_tm);
-    }
+// trim from end (in place)
+static inline void rtrim(std::string &s) {
+    s.erase(std::find_if(s.rbegin(), s.rend(), [](unsigned char ch) {
+        return !std::isspace(ch);
+    }).base(), s.end());
+}
 
-    string serialize_station_data(const vector<string>& station_data) {
-        stringstream ss;
-        for (const auto& item : station_data) {
-            ss << item << ",";
-        }
-        string result = ss.str();
-        result.pop_back();
-        return result;
-    }
-
-    vector<string> deserialize_station_data(const string& data) {
-        stringstream ss(data);
-        string item;
-        vector<string> station_data;
-        while (getline(ss, item, ',')) {
-            station_data.push_back(item);
-        }
-        return station_data;
-    }
-
-    string serialize_journey(const vector<vector<string>>& journey_data) {
-        stringstream ss;
-        for (const auto& row : journey_data) {
-            for (const auto& item : row) {
-                ss << item << ",";
-            }
-            ss << ";";
-        }
-        string result = ss.str();
-        result.pop_back();
-        return result;
-    }
-
-    vector<vector<string>> deserialize_journey(const string& data) {
-        stringstream ss(data);
-        string row;
-        vector<vector<string>> journey_data;
-        while (getline(ss, row, ';')) {
-            stringstream row_ss(row);
-            string item;
-            vector<string> journey_row;
-            while (getline(row_ss, item, ',')) {
-                journey_row.push_back(item);
-            }
-            journey_data.push_back(journey_row);
-        }
-        return journey_data;
-    }
-
-    void print_journey_list(const vector<vector<vector<string>>>& journey_list) {
-        cout << "[DEBUG] Journey List:" << endl;
-        for (const auto& journey : journey_list) {
-            cout << "[DEBUG] Journey:" << endl;
-            for (const auto& step : journey) {
-                for (const auto& item : step) {
-                    cout << "[DEBUG] " << item << " ";
-                }
-                cout << endl;
-            }
-            cout << "[DEBUG] -----" << endl;
-        }
-    }
-
-    // trim from start (in place)
-    static inline void ltrim(std::string &s) {
-        s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch) {
-            return !std::isspace(ch);
-        }));
-    }
-
-    // trim from end (in place)
-    static inline void rtrim(std::string &s) {
-        s.erase(std::find_if(s.rbegin(), s.rend(), [](unsigned char ch) {
-            return !std::isspace(ch);
-        }).base(), s.end());
-    }
-
-    // trim from both ends (in place)
-    static inline void trim(std::string &s) {
-        ltrim(s);
-        rtrim(s);
-    }
+// trim from both ends (in place)
+static inline void trim(std::string &s) {
+    ltrim(s);
+    rtrim(s);
+}
 };
 
 int main(int argc, char* argv[]) {

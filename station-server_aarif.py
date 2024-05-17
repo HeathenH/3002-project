@@ -22,7 +22,15 @@ class NetworkServer(multiprocessing.Process):
         self.adjacent_ips = [addr.split(':')[0] for addr in self.adjacent_addresses]
         self.adjacent_ports = [int(addr.split(':')[1]) for addr in self.adjacent_addresses]
         #### change this to ur pc's IP address. To find ur IP address in Linux type "ifconfig" in ur terminal, if on windows type "ipconfig" on cmd/powershell
-        self.host_ip = "10.135.223.145"
+        self.host_ip = "127.0.0.1"
+        # Aarif's on Unifi
+        # self.host_ip = "10.135.223.145"
+        ### Aarif's on hotspot ###
+        # self.host_ip = "172.20.10.2"
+        ### Nico's on Unifi
+        #self.host_ip = "10.135.102.29"
+        # My Hotspot
+        # self.host_ip = "172.20.10.4"
         ####
         self.timetable_filename = f"tt-{self.station_name}"
         self.timetable = None
@@ -59,19 +67,23 @@ class NetworkServer(multiprocessing.Process):
         # Start UDP handler
         udp_handler = multiprocessing.Process(target=self.handle_udp)
         udp_handler.start()
+        print(f"station list: {self.station_list}")
+
 
         # Ping adjacent ports for their station name and port number
         while len(self.station_list) != len(self.adjacent_ports):
             query_data = "query_station"
+
             # for port in self.adjacent_ports:
             for addr in self.adjacent_addresses:
                 neighboring_station_address = (addr.split(":")[0], int(addr.split(":")[1]))
-                print(neighboring_station_address)
                 self.udp_socket.sendto(query_data.encode("utf-8"), neighboring_station_address)
                 time.sleep(1)
 
+
             if not self.station_list_queue.empty():
                 self.station_list = self.station_list_queue.get()
+            print("STILL GOING!!!")
             print(f"station list: {self.station_list}")
                 
         
@@ -81,9 +93,11 @@ class NetworkServer(multiprocessing.Process):
             while True:
                 # Check for timetable file changes
                 current_modified_time = os.stat(self.timetable_filename).st_mtime
+                # print("EXDEEDEE")
                 #print(f"1: {current_modified_time}")
                 #print(f"2: {self.last_modified_time}")
                 if current_modified_time != self.last_modified_time:
+                    print("WAHOO")
                     # Timetable file has changed
                     self.last_modified_time = current_modified_time
                     self.load_timetable()
@@ -99,7 +113,10 @@ class NetworkServer(multiprocessing.Process):
     def handle_tcp(self):
         try:
             while True:
+                print("xdd")
                 tcp_conn, _ = self.tcp_socket.accept()
+                # START TIMER HERE
+                print("issue here ^")
                 request_data = tcp_conn.recv(4096).decode("utf-8")
                 if request_data:
                     http_method, http_path, _ = request_data.split(" ", 2)
@@ -160,7 +177,7 @@ class NetworkServer(multiprocessing.Process):
 
                         print("end of timetable")
                         while len(journey_list) < 1:
-                            time.sleep(2)
+                            time.sleep(5)
                             while not self.journey_list_queue.empty():
                                 journey_list.append(self.journey_list_queue.get())
                                 
@@ -359,9 +376,15 @@ if __name__ == "__main__":
     query_port = sys.argv[3]
     # adjacent_ports = [int(port_str.split(':')[1]) for port_str in sys.argv[4:]]
     adjacent_addrs = sys.argv[4:]
+    print(adjacent_addrs)
 
     # Create and start the NetworkServer instance
     server = NetworkServer(station_name, browser_port, query_port, adjacent_addrs)
     server.start()
+    if server.is_alive():
+        print("Child process is still running.")
+    else:
+        print("Child process has terminated.")
+
     server.join()
 

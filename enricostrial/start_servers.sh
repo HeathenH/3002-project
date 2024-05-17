@@ -1,21 +1,21 @@
 #!/bin/bash
 
-./station_server TerminalA 4001 2001 localhost:2015 &
+./station_server TerminalA 4001 2001 172.23.232.118:2015 &
 sleep 3
-./station_server JunctionB 4003 2003 localhost:2009 localhost:2015 &
+./station_server JunctionB 4003 2003 172.23.232.118:2009 172.23.232.118:2015 &
 sleep 3
-./station_server BusportC 4005 2005 localhost:2013 localhost:2017 &
+./station_server BusportC 4005 2005 172.23.232.118:2013 172.23.232.118:2017 &
 sleep 3
-./station_server StationD 4007 2007 localhost:2009 &
+./station_server StationD 4007 2007 172.23.232.118:2009 &
 sleep 3
-./station_server TerminalE 4009 2009 localhost:2003 localhost:2007 localhost:2011 localhost:2015 &
+./station_server TerminalE 4009 2009 172.23.232.118:2003 172.23.232.118:2007 172.23.232.118:2011 172.23.232.118:2015 &
 sleep 3
-./station_server JunctionF 4011 2011 localhost:2009 localhost:2015 localhost:2019 &
+./station_server JunctionF 4011 2011 172.23.232.118:2009 172.23.232.118:2015 172.23.232.118:2019 &
 sleep 3
-./station_server BusportG 4013 2013 localhost:2005 localhost:2019 &
+./station_server BusportG 4013 2013 172.23.232.118:2005 172.23.232.118:2019 &
 sleep 3
-./station_server StationH 4015 2015 localhost:2001 localhost:2003 localhost:2009 localhost:2011 localhost:2019 &
+./station_server StationH 4015 2015 172.23.232.118:2001 172.23.232.118:2003 172.23.232.118:2009 172.23.232.118:2011 172.23.232.118:2019 &
 sleep 3
-./station_server TerminalI 4017 2017 localhost:2005 localhost:2019 &
+./station_server TerminalI 4017 2017 172.23.232.118:2005 172.23.232.118:2019 &
 sleep 3
-./station_server JunctionJ 4019 2019 localhost:2011 localhost:2013 localhost:2015 localhost:2017 &
+./station_server JunctionJ 4019 2019 172.23.232.118:2011 172.23.232.118:2013 172.23.232.118:2015 172.23.232.118:2017 &

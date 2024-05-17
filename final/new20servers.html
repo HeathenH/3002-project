@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html>
+<body style="background-image: url('https://images.assetsdelivery.com/compings_v2/zoaarts/zoaarts1810/zoaarts181000012.jpg'); background-repeat: repeat;">
+
+<style>
+div.box {
+  margin: 1em;
+  width: 30em;
+  border-radius: 6px;
+  border: 1px solid gray;
+  background-color: honeydew;
+  padding: 0.4em;
+}
+</style>
+
+<div class="box">
+  <h3>&nbsp;Leaving after <span id="departureTime">12:00</span></h3>
+</div>
+
+<div class="box">
+  <label for="ipInput">Enter IP address:</label>
+  <input type="text" id="ipInput" placeholder="Enter IP address">
+  <button onclick="updateIP()">Update IP</button>
+</div>
+
+<div class="box">
+  <form id="form1" action="http://localhost:4005/">
+    <table>
+      <tr>
+        <td style="text-align: right;">Leaving from:</td>
+        <td style="text-align: left;">&nbsp;<b>BusportC</b></td>
+        <td style="padding-left: 3em;"><i id="display1">http://localhost:4005/</i></td>
+      </tr>
+      <tr>
+        <td style="text-align: right;"><label>Destination:</label></td>
+        <td><select name="to">
+          <option value='BusportG'>BusportG</option>
+          <option value='BusportK'>BusportK</option>
+          <option value='BusportO'>BusportO</option>
+          <option value='BusportS'>BusportS</option>
+          <option value='JunctionB'>JunctionB</option>
+          <option value='JunctionF'>JunctionF</option>
+          <option value='JunctionJ'>JunctionJ</option>
+          <option value='JunctionN'>JunctionN</option>
+          <option value='JunctionR'>JunctionR</option>
+          <option value='StationD'>StationD</option>
+          <option value='StationH'>StationH</option>
+          <option value='StationL'>StationL</option>
+          <option value='StationP'>StationP</option>
+          <option value='StationT'>StationT</option>
+          <option value='TerminalA'>TerminalA</option>
+          <option value='TerminalE'>TerminalE</option>
+          <option value='TerminalI'>TerminalI</option>
+          <option value='TerminalM'>TerminalM</option>
+          <option value='TerminalQ'>TerminalQ</option>
+        </select></td>
+        <td style="padding-left: 3em;"><input type="submit" value=" Let's go! "></td>
+      </tr>
+    </table>
+  </form>
+</div>
+
+<div class="box">
+  <form id="form2" action="http://localhost:4013/">
+    <table>
+      <tr>
+        <td style="text-align: right;">Leaving from:</td>
+        <td style="text-align: left;">&nbsp;<b>BusportG</b></td>
+        <td style="padding-left: 3em;"><i id="display2">http://localhost:4013/</i></td>
+      </tr>
+      <tr>
+        <td style="text-align: right;"><label>Destination:</label></td>
+        <td><select name="to">
+          <option value='BusportC'>BusportC</option>
+          <option value='BusportK'>BusportK</option>
+          <option value='BusportO'>BusportO</option>
+          <option value='BusportS'>BusportS</option>
+          <option value='JunctionB'>JunctionB</option>
+          <option value='JunctionF'>JunctionF</option>
+          <option value='JunctionJ'>JunctionJ</option>
+          <option value='JunctionN'>JunctionN</option>
+          <option value='JunctionR'>JunctionR</option>
+          <option value='StationD'>StationD</option>
+          <option value='StationH'>StationH</option>
+          <option value='StationL'>StationL</option>
+          <option value='StationP'>StationP</option>
+          <option value='StationT'>StationT</option>
+          <option value='TerminalA'>TerminalA</option>
+          <option value='TerminalE'>TerminalE</option>
+          <option value='TerminalI'>TerminalI</option>
+          <option value='TerminalM'>TerminalM</option>
+          <option value='TerminalQ'>TerminalQ</option>
+        </select></td>
+        <td style="padding-left: 3em;"><input type="submit" value=" Let's go! "></td>
+      </tr>
+    </table>
+  </form>
+</div>
+
+<div class="box">
+  <form id="form3" action="http://localhost:4021/">
+    <table>
+      <tr>
+        <td style="text-align: right;">Leaving from:</td>
+        <td style="text-align: left;">&nbsp;<b>BusportK</b></td>
+        <td style="padding-left: 3em;"><i id="display3">http://localhost:4021/</i></td>
+      </tr>
+      <tr>
+        <td style="text-align: right;"><label>Destination:</label></td>
+        <td><select name="to">
+          <option value='BusportC'>BusportC</option>
+          <option value='BusportG'>BusportG</option>
+          <option value='BusportO'>BusportO</option>
+          <option value='BusportS'>BusportS</option>
+          <option value='JunctionB'>JunctionB</option>
+          <option value='JunctionF'>JunctionF</option>
+          <option value='JunctionJ'>JunctionJ</option>
+          <option value='JunctionN'>JunctionN</option>
+          <option value='JunctionR'>JunctionR</option>
+          <option value='StationD'>StationD</option>
+          <option value='StationH'>StationH</option>
+          <option value='StationL'>StationL</option>
+          <option value='StationP'>StationP</option>
+          <option value='StationT'>StationT</option>
+          <option value='TerminalA'>TerminalA</option>
+          <option value='TerminalE'>TerminalE</option>
+          <option value='TerminalI'>TerminalI</option>
+          <option value='TerminalM'>TerminalM</option>
+          <option value='TerminalQ'>TerminalQ</option>
+        </select></td>
+        <td style="padding-left: 3em;"><input type="submit" value=" Let's go! "></td>
+      </tr>
+    </table>
+  </form>
+</div>
+
+<div class="box">
+  <form id="form4" action="http://localhost:4029/">
+    <table>
+      <tr>
+        <td style="text-align: right;">Leaving from:</td>
+        <td style="text-align: left;">&nbsp;<b>BusportO</b></td>
+        <td style="padding-left: 3em;"><i id="display4">http://localhost:4029/</i></td>
+      </tr>
+      <tr>
+        <td style="text-align: right;"><label>Destination:</label></td>
+        <td><select name="to">
+          <option value='BusportC'>BusportC</option>
+          <option value='BusportG'>BusportG</option>
+          <option value='BusportK'>BusportK</option>
+          <option value='BusportS'>BusportS</option>
+          <option value='JunctionB'>JunctionB</option>
+          <option value='JunctionF'>JunctionF</option>
+          <option value='JunctionJ'>JunctionJ</option>
+          <option value='JunctionN'>JunctionN</option>
+          <option value='JunctionR'>JunctionR</option>
+          <option value='StationD'>StationD</option>
+          <option value='StationH'>StationH</option>
+          <option value='StationL'>StationL</option>
+          <option value='StationP'>StationP</option>
+          <option value='StationT'>StationT</option>
+          <option value='TerminalA'>TerminalA</option>
+          <option value='TerminalE'>TerminalE</option>
+          <option value='TerminalI'>TerminalI</option>
+          <option value='TerminalM'>TerminalM</option>
+          <option value='TerminalQ'>TerminalQ</option>
+        </select></td>
+        <td style="padding-left: 3em;"><input type="submit" value=" Let's go! "></td>
+      </tr>
+    </table>
+  </form>
+</div>
+
+<div class="box">
+  <form id="form5" action="http://localhost:4037/">
+    <table>
+      <tr>
+        <td style="text-align: right;">Leaving from:</td>
+        <td style="text-align: left;">&nbsp;<b>BusportS</b></td>
+        <td style="padding-left: 3em;"><i id="display5">http://localhost:4037/</i></td>
+      </tr>
+      <tr>
+        <td style="text-align: right;"><label>Destination:</label></td>
+        <td><select name="to">
+          <option value='BusportC'>BusportC</option>
+          <option value='BusportG'>BusportG</option>
+          <option value='BusportK'>BusportK</option>
+          <option value='BusportO'>BusportO</option>
+          <option value='JunctionB'>JunctionB</option>
+          <option value='JunctionF'>JunctionF</option>
+          <option value='JunctionJ'>JunctionJ</option>
+          <option value='JunctionN'>JunctionN</option>
+          <option value='JunctionR'>JunctionR</option>
+          <option value='StationD'>StationD</option>
+          <option value='StationH'>StationH</option>
+          <option value='StationL'>StationL</option>
+          <option value='StationP'>StationP</option>
+          <option value='StationT'>StationT</option>
+          <option value='TerminalA'>TerminalA</option>
+          <option value='TerminalE'>TerminalE</option>
+          <option value='TerminalI'>TerminalI</option>
+          <option value='TerminalM'>TerminalM</option>
+          <option value='TerminalQ'>TerminalQ</option>
+        </select></td>
+        <td style="padding-left: 3em;"><input type="submit" value=" Let's go! "></td>
+      </tr>
+    </table>
+  </form>
+</div>
+
+<div class="box">
+  <form id="form6" action="http://localhost:4003/">
+    <table>
+      <tr>
+        <td style="text-align: right;">Leaving from:</td>
+        <td style="text-align: left;">&nbsp;<b>JunctionB</b></td>
+        <td style="padding-left: 3em;"><i id="display6">http://localhost:4003/</i></td>
+      </tr>
+      <tr>
+        <td style="text-align: right;"><label>Destination:</label></td>
+        <td><select name="to">
+          <option value='BusportC'>BusportC</option>
+          <option value='BusportG'>BusportG</option>
+          <option value='BusportK'>BusportK</option>
+          <option value='BusportO'>BusportO</option>
+          <option value='BusportS'>BusportS</option>
+          <option value='JunctionF'>JunctionF</option>
+          <option value='JunctionJ'>JunctionJ</option>
+          <option value='JunctionN'>JunctionN</option>
+          <option value='JunctionR'>JunctionR</option>
+          <option value='StationD'>StationD</option>
+          <option value='StationH'>StationH</option>
+          <option value='StationL'>StationL</option>
+          <option value='StationP'>StationP</option>
+          <option value='StationT'>StationT</option>
+          <option value='TerminalA'>TerminalA</option>
+          <option value='TerminalE'>TerminalE</option>
+          <option value='TerminalI'>TerminalI</option>
+          <option value='TerminalM'>TerminalM</option>
+          <option value='TerminalQ'>TerminalQ</option>
+        </select></td>
+        <td style="padding-left: 3em;"><input type="submit" value=" Let's go! "></td>
+      </tr>
+    </table>
+  </form>
+</div>
+
+<div class="box">
+  <form id="form7" action="http://localhost:4011/">
+    <table>
+      <tr>
+        <td style="text-align: right;">Leaving from:</td>
+        <td style="text-align: left;">&nbsp;<b>JunctionF</b></td>
+        <td style="padding-left: 3em;"><i id="display7">http://localhost:4011/</i></td>
+      </tr>
+      <tr>
+        <td style="text-align: right;"><label>Destination:</label></td>
+        <td><select name="to">
+          <option value='BusportC'>BusportC</option>
+          <option value='BusportG'>BusportG</option>
+          <option value='BusportK'>BusportK</option>
+          <option value='BusportO'>BusportO</option>
+          <option value='BusportS'>BusportS</option>
+          <option value='JunctionB'>JunctionB</option>
+          <option value='JunctionJ'>JunctionJ</option>
+          <option value='JunctionN'>JunctionN</option>
+          <option value='JunctionR'>JunctionR</option>
+          <option value='StationD'>StationD</option>
+          <option value='StationH'>StationH</option>
+          <option value='StationL'>StationL</option>
+          <option value='StationP'>StationP</option>
+          <option value='StationT'>StationT</option>
+          <option value='TerminalA'>TerminalA</option>
+          <option value='TerminalE'>TerminalE</option>
+          <option value='TerminalI'>TerminalI</option>
+          <option value='TerminalM'>TerminalM</option>
+          <option value='TerminalQ'>TerminalQ</option>
+        </select></td>
+        <td style="padding-left: 3em;"><input type="submit" value=" Let's go! "></td>
+      </tr>
+    </table>
+  </form>
+</div>
+
+<div class="box">
+  <form id="form8" action="http://localhost:4019/">
+    <table>
+      <tr>
+        <td style="text-align: right;">Leaving from:</td>
+        <td style="text-align: left;">&nbsp;<b>JunctionJ</b></td>
+        <td style="padding-left: 3em;"><i id="display8">http://localhost:4019/</i></td>
+      </tr>
+      <tr>
+        <td style="text-align: right;"><label>Destination:</label></td>
+        <td><select name="to">
+          <option value='BusportC'>BusportC</option>
+          <option value='BusportG'>BusportG</option>
+          <option value='BusportK'>BusportK</option>
+          <option value='BusportO'>BusportO</option>
+          <option value='BusportS'>BusportS</option>
+          <option value='JunctionB'>JunctionB</option>
+          <option value='JunctionF'>JunctionF</option>
+          <option value='JunctionN'>JunctionN</option>
+          <option value='JunctionR'>JunctionR</option>
+          <option value='StationD'>StationD</option>
+          <option value='StationH'>StationH</option>
+          <option value='StationL'>StationL</option>
+          <option value='StationP'>StationP</option>
+          <option value='StationT'>StationT</option>
+          <option value='TerminalA'>TerminalA</option>
+          <option value='TerminalE'>TerminalE</option>
+          <option value='TerminalI'>TerminalI</option>
+          <option value='TerminalM'>TerminalM</option>
+          <option value='TerminalQ'>TerminalQ</option>
+        </select></td>
+        <td style="padding-left: 3em;"><input type="submit" value=" Let's go! "></td>
+      </tr>
+    </table>
+  </form>
+</div>
+
+<div class="box">
+  <form id="form9" action="http://localhost:4027/">
+    <table>
+      <tr>
+        <td style="text-align: right;">Leaving from:</td>
+        <td style="text-align: left;">&nbsp;<b>JunctionN</b></td>
+        <td style="padding-left: 3em;"><i id="display9">http://localhost:4027/</i></td>
+      </tr>
+      <tr>
+        <td style="text-align: right;"><label>Destination:</label></td>
+        <td><select name="to">
+          <option value='BusportC'>BusportC</option>
+          <option value='BusportG'>BusportG</option>
+          <option value='BusportK'>BusportK</option>
+          <option value='BusportO'>BusportO</option>
+          <option value='BusportS'>BusportS</option>
+          <option value='JunctionB'>JunctionB</option>
+          <option value='JunctionF'>JunctionF</option>
+          <option value='JunctionJ'>JunctionJ</option>
+          <option value='JunctionR'>JunctionR</option>
+          <option value='StationD'>StationD</option>
+          <option value='StationH'>StationH</option>
+          <option value='StationL'>StationL</option>
+          <option value='StationP'>StationP</option>
+          <option value='StationT'>StationT</option>
+          <option value='TerminalA'>TerminalA</option>
+          <option value='TerminalE'>TerminalE</option>
+          <option value='TerminalI'>TerminalI</option>
+          <option value='TerminalM'>TerminalM</option>
+          <option value='TerminalQ'>TerminalQ</option>
+        </select></td>
+        <td style="padding-left: 3em;"><input type="submit" value=" Let's go! "></td>
+      </tr>
+    </table>
+  </form>
+</div>
+
+<div class="box">
+  <form id="form10" action="http://localhost:4035/">
+    <table>
+      <tr>
+        <td style="text-align: right;">Leaving from:</td>
+        <td style="text-align: left;">&nbsp;<b>JunctionR</b></td>
+        <td style="padding-left: 3em;"><i id="display10">http://localhost:4035/</i></td>
+      </tr>
+      <tr>
+        <td style="text-align: right;"><label>Destination:</label></td>
+        <td><select name="to">
+          <option value='BusportC'>BusportC</option>
+          <option value='BusportG'>BusportG</option>
+          <option value='BusportK'>BusportK</option>
+          <option value='BusportO'>BusportO</option>
+          <option value='BusportS'>BusportS</option>
+          <option value='JunctionB'>JunctionB</option>
+          <option value='JunctionF'>JunctionF</option>
+          <option value='JunctionJ'>JunctionJ</option>
+          <option value='JunctionN'>JunctionN</option>
+          <option value='StationD'>StationD</option>
+          <option value='StationH'>StationH</option>
+          <option value='StationL'>StationL</option>
+          <option value='StationP'>StationP</option>
+          <option value='StationT'>StationT</option>
+          <option value='TerminalA'>TerminalA</option>
+          <option value='TerminalE'>TerminalE</option>
+          <option value='TerminalI'>TerminalI</option>
+          <option value='TerminalM'>TerminalM</option>
+          <option value='TerminalQ'>TerminalQ</option>
+        </select></td>
+        <td style="padding-left: 3em;"><input type="submit" value=" Let's go! "></td>
+      </tr>
+    </table>
+  </form>
+</div>
+
+<div class="box">
+  <form id="form11" action="http://localhost:4007/">
+    <table>
+      <tr>
+        <td style="text-align: right;">Leaving from:</td>
+        <td style="text-align: left;">&nbsp;<b>StationD</b></td>
+        <td style="padding-left: 3em;"><i id="display11">http://localhost:4007/</i></td>
+      </tr>
+      <tr>
+        <td style="text-align: right;"><label>Destination:</label></td>
+        <td><select name="to">
+          <option value='BusportC'>BusportC</option>
+          <option value='BusportG'>BusportG</option>
+          <option value='BusportK'>BusportK</option>
+          <option value='BusportO'>BusportO</option>
+          <option value='BusportS'>BusportS</option>
+          <option value='JunctionB'>JunctionB</option>
+          <option value='JunctionF'>JunctionF</option>
+          <option value='JunctionJ'>JunctionJ</option>
+          <option value='JunctionN'>JunctionN</option>
+          <option value='JunctionR'>JunctionR</option>
+          <option value='StationH'>StationH</option>
+          <option value='StationL'>StationL</option>
+          <option value='StationP'>StationP</option>
+          <option value='StationT'>StationT</option>
+          <option value='TerminalA'>TerminalA</option>
+          <option value='TerminalE'>TerminalE</option>
+          <option value='TerminalI'>TerminalI</option>
+          <option value='TerminalM'>TerminalM</option>
+          <option value='TerminalQ'>TerminalQ</option>
+        </select></td>
+        <td style="padding-left: 3em;"><input type="submit" value=" Let's go! "></td>
+      </tr>
+    </table>
+  </form>
+</div>
+
+<div class="box">
+  <form id="form12" action="http://localhost:4015/">
+    <table>
+      <tr>
+        <td style="text-align: right;">Leaving from:</td>
+        <td style="text-align: left;">&nbsp;<b>StationH</b></td>
+        <td style="padding-left: 3em;"><i id="display12">http://localhost:4015/</i></td>
+      </tr>
+      <tr>
+        <td style="text-align: right;"><label>Destination:</label></td>
+        <td><select name="to">
+          <option value='BusportC'>BusportC</option>
+          <option value='BusportG'>BusportG</option>
+          <option value='BusportK'>BusportK</option>
+          <option value='BusportO'>BusportO</option>
+          <option value='BusportS'>BusportS</option>
+          <option value='JunctionB'>JunctionB</option>
+          <option value='JunctionF'>JunctionF</option>
+          <option value='JunctionJ'>JunctionJ</option>
+          <option value='JunctionN'>JunctionN</option>
+          <option value='JunctionR'>JunctionR</option>
+          <option value='StationD'>StationD</option>
+          <option value='StationL'>StationL</option>
+          <option value='StationP'>StationP</option>
+          <option value='StationT'>StationT</option>
+          <option value='TerminalA'>TerminalA</option>
+          <option value='TerminalE'>TerminalE</option>
+          <option value='TerminalI'>TerminalI</option>
+          <option value='TerminalM'>TerminalM</option>
+          <option value='TerminalQ'>TerminalQ</option>
+        </select></td>
+        <td style="padding-left: 3em;"><input type="submit" value=" Let's go! "></td>
+      </tr>
+    </table>
+  </form>
+</div>
+
+<div class="box">
+  <form id="form13" action="http://localhost:4023/">
+    <table>
+      <tr>
+        <td style="text-align: right;">Leaving from:</td>
+        <td style="text-align: left;">&nbsp;<b>StationL</b></td>
+        <td style="padding-left: 3em;"><i id="display13">http://localhost:4023/</i></td>
+      </tr>
+      <tr>
+        <td style="text-align: right;"><label>Destination:</label></td>
+        <td><select name="to">
+          <option value='BusportC'>BusportC</option>
+          <option value='BusportG'>BusportG</option>
+          <option value='BusportK'>BusportK</option>
+          <option value='BusportO'>BusportO</option>
+          <option value='BusportS'>BusportS</option>
+          <option value='JunctionB'>JunctionB</option>
+          <option value='JunctionF'>JunctionF</option>
+          <option value='JunctionJ'>JunctionJ</option>
+          <option value='JunctionN'>JunctionN</option>
+          <option value='JunctionR'>JunctionR</option>
+          <option value='StationD'>StationD</option>
+          <option value='StationH'>StationH</option>
+          <option value='StationP'>StationP</option>
+          <option value='StationT'>StationT</option>
+          <option value='TerminalA'>TerminalA</option>
+          <option value='TerminalE'>TerminalE</option>
+          <option value='TerminalI'>TerminalI</option>
+          <option value='TerminalM'>TerminalM</option>
+          <option value='TerminalQ'>TerminalQ</option>
+        </select></td>
+        <td style="padding-left: 3em;"><input type="submit" value=" Let's go! "></td>
+      </tr>
+    </table>
+  </form>
+</div>
+
+<div class="box">
+  <form id="form14" action="http://localhost:4031/">
+    <table>
+      <tr>
+        <td style="text-align: right;">Leaving from:</td>
+        <td style="text-align: left;">&nbsp;<b>StationP</b></td>
+        <td style="padding-left: 3em;"><i id="display14">http://localhost:4031/</i></td>
+      </tr>
+      <tr>
+        <td style="text-align: right;"><label>Destination:</label></td>
+        <td><select name="to">
+          <option value='BusportC'>BusportC</option>
+          <option value='BusportG'>BusportG</option>
+          <option value='BusportK'>BusportK</option>
+          <option value='BusportO'>BusportO</option>
+          <option value='BusportS'>BusportS</option>
+          <option value='JunctionB'>JunctionB</option>
+          <option value='JunctionF'>JunctionF</option>
+          <option value='JunctionJ'>JunctionJ</option>
+          <option value='JunctionN'>JunctionN</option>
+          <option value='JunctionR'>JunctionR</option>
+          <option value='StationD'>StationD</option>
+          <option value='StationH'>StationH</option>
+          <option value='StationL'>StationL</option>
+          <option value='StationT'>StationT</option>
+          <option value='TerminalA'>TerminalA</option>
+          <option value='TerminalE'>TerminalE</option>
+          <option value='TerminalI'>TerminalI</option>
+          <option value='TerminalM'>TerminalM</option>
+          <option value='TerminalQ'>TerminalQ</option>
+        </select></td>
+        <td style="padding-left: 3em;"><input type="submit" value=" Let's go! "></td>
+      </tr>
+    </table>
+  </form>
+</div>
+
+<div class="box">
+  <form id="form15" action="http://localhost:4039/">
+    <table>
+      <tr>
+        <td style="text-align: right;">Leaving from:</td>
+        <td style="text-align: left;">&nbsp;<b>StationT</b></td>
+        <td style="padding-left: 3em;"><i id="display15">http://localhost:4039/</i></td>
+      </tr>
+      <tr>
+        <td style="text-align: right;"><label>Destination:</label></td>
+        <td><select name="to">
+          <option value='BusportC'>BusportC</option>
+          <option value='BusportG'>BusportG</option>
+          <option value='BusportK'>BusportK</option>
+          <option value='BusportO'>BusportO</option>
+          <option value='BusportS'>BusportS</option>
+          <option value='JunctionB'>JunctionB</option>
+          <option value='JunctionF'>JunctionF</option>
+          <option value='JunctionJ'>JunctionJ</option>
+          <option value='JunctionN'>JunctionN</option>
+          <option value='JunctionR'>JunctionR</option>
+          <option value='StationD'>StationD</option>
+          <option value='StationH'>StationH</option>
+          <option value='StationL'>StationL</option>
+          <option value='StationP'>StationP</option>
+          <option value='TerminalA'>TerminalA</option>
+          <option value='TerminalE'>TerminalE</option>
+          <option value='TerminalI'>TerminalI</option>
+          <option value='TerminalM'>TerminalM</option>
+          <option value='TerminalQ'>TerminalQ</option>
+        </select></td>
+        <td style="padding-left: 3em;"><input type="submit" value=" Let's go! "></td>
+      </tr>
+    </table>
+  </form>
+</div>
+
+<div class="box">
+  <form id="form16" action="http://localhost:4001/">
+    <table>
+      <tr>
+        <td style="text-align: right;">Leaving from:</td>
+        <td style="text-align: left;">&nbsp;<b>TerminalA</b></td>
+        <td style="padding-left: 3em;"><i id="display16">http://localhost:4001/</i></td>
+      </tr>
+      <tr>
+        <td style="text-align: right;"><label>Destination:</label></td>
+        <td><select name="to">
+          <option value='BusportC'>BusportC</option>
+          <option value='BusportG'>BusportG</option>
+          <option value='BusportK'>BusportK</option>
+          <option value='BusportO'>BusportO</option>
+          <option value='BusportS'>BusportS</option>
+          <option value='JunctionB'>JunctionB</option>
+          <option value='JunctionF'>JunctionF</option>
+          <option value='JunctionJ'>JunctionJ</option>
+          <option value='JunctionN'>JunctionN</option>
+          <option value='JunctionR'>JunctionR</option>
+          <option value='StationD'>StationD</option>
+          <option value='StationH'>StationH</option>
+          <option value='StationL'>StationL</option>
+          <option value='StationP'>StationP</option>
+          <option value='StationT'>StationT</option>
+          <option value='TerminalE'>TerminalE</option>
+          <option value='TerminalI'>TerminalI</option>
+          <option value='TerminalM'>TerminalM</option>
+          <option value='TerminalQ'>TerminalQ</option>
+        </select></td>
+        <td style="padding-left: 3em;"><input type="submit" value=" Let's go! "></td>
+      </tr>
+    </table>
+  </form>
+</div>
+
+<div class="box">
+  <form id="form17" action="http://localhost:4009/">
+    <table>
+      <tr>
+        <td style="text-align: right;">Leaving from:</td>
+        <td style="text-align: left;">&nbsp;<b>TerminalE</b></td>
+        <td style="padding-left: 3em;"><i id="display17">http://localhost:4009/</i></td>
+      </tr>
+      <tr>
+        <td style="text-align: right;"><label>Destination:</label></td>
+        <td><select name="to">
+          <option value='BusportC'>BusportC</option>
+          <option value='BusportG'>BusportG</option>
+          <option value='BusportK'>BusportK</option>
+          <option value='BusportO'>BusportO</option>
+          <option value='BusportS'>BusportS</option>
+          <option value='JunctionB'>JunctionB</option>
+          <option value='JunctionF'>JunctionF</option>
+          <option value='JunctionJ'>JunctionJ</option>
+          <option value='JunctionN'>JunctionN</option>
+          <option value='JunctionR'>JunctionR</option>
+          <option value='StationD'>StationD</option>
+          <option value='StationH'>StationH</option>
+          <option value='StationL'>StationL</option>
+          <option value='StationP'>StationP</option>
+          <option value='StationT'>StationT</option>
+          <option value='TerminalA'>TerminalA</option>
+          <option value='TerminalI'>TerminalI</option>
+          <option value='TerminalM'>TerminalM</option>
+          <option value='TerminalQ'>TerminalQ</option>
+        </select></td>
+        <td style="padding-left: 3em;"><input type="submit" value=" Let's go! "></td>
+      </tr>
+    </table>
+  </form>
+</div>
+
+<div class="box">
+  <form id="form18" action="http://localhost:4017/">
+    <table>
+      <tr>
+        <td style="text-align: right;">Leaving from:</td>
+        <td style="text-align: left;">&nbsp;<b>TerminalI</b></td>
+        <td style="padding-left: 3em;"><i id="display18">http://localhost:4017/</i></td>
+      </tr>
+      <tr>
+        <td style="text-align: right;"><label>Destination:</label></td>
+        <td><select name="to">
+          <option value='BusportC'>BusportC</option>
+          <option value='BusportG'>BusportG</option>
+          <option value='BusportK'>BusportK</option>
+          <option value='BusportO'>BusportO</option>
+          <option value='BusportS'>BusportS</option>
+          <option value='JunctionB'>JunctionB</option>
+          <option value='JunctionF'>JunctionF</option>
+          <option value='JunctionJ'>JunctionJ</option>
+          <option value='JunctionN'>JunctionN</option>
+          <option value='JunctionR'>JunctionR</option>
+          <option value='StationD'>StationD</option>
+          <option value='StationH'>StationH</option>
+          <option value='StationL'>StationL</option>
+          <option value='StationP'>StationP</option>
+          <option value='StationT'>StationT</option>
+          <option value='TerminalA'>TerminalA</option>
+          <option value='TerminalE'>TerminalE</option>
+          <option value='TerminalM'>TerminalM</option>
+          <option value='TerminalQ'>TerminalQ</option>
+        </select></td>
+        <td style="padding-left: 3em;"><input type="submit" value=" Let's go! "></td>
+      </tr>
+    </table>
+  </form>
+</div>
+
+<div class="box">
+  <form id="form19" action="http://localhost:4025/">
+    <table>
+      <tr>
+        <td style="text-align: right;">Leaving from:</td>
+        <td style="text-align: left;">&nbsp;<b>TerminalM</b></td>
+        <td style="padding-left: 3em;"><i id="display19">http://localhost:4025/</i></td>
+      </tr>
+      <tr>
+        <td style="text-align: right;"><label>Destination:</label></td>
+        <td><select name="to">
+          <option value='BusportC'>BusportC</option>
+          <option value='BusportG'>BusportG</option>
+          <option value='BusportK'>BusportK</option>
+          <option value='BusportO'>BusportO</option>
+          <option value='BusportS'>BusportS</option>
+          <option value='JunctionB'>JunctionB</option>
+          <option value='JunctionF'>JunctionF</option>
+          <option value='JunctionJ'>JunctionJ</option>
+          <option value='JunctionN'>JunctionN</option>
+          <option value='JunctionR'>JunctionR</option>
+          <option value='StationD'>StationD</option>
+          <option value='StationH'>StationH</option>
+          <option value='StationL'>StationL</option>
+          <option value='StationP'>StationP</option>
+          <option value='StationT'>StationT</option>
+          <option value='TerminalA'>TerminalA</option>
+          <option value='TerminalE'>TerminalE</option>
+          <option value='TerminalI'>TerminalI</option>
+          <option value='TerminalQ'>TerminalQ</option>
+        </select></td>
+        <td style="padding-left: 3em;"><input type="submit" value=" Let's go! "></td>
+      </tr>
+    </table>
+  </form>
+</div>
+
+<div class="box">
+  <form id="form20" action="http://localhost:4033/">
+    <table>
+      <tr>
+        <td style="text-align: right;">Leaving from:</td>
+        <td style="text-align: left;">&nbsp;<b>TerminalQ</b></td>
+        <td style="padding-left: 3em;"><i id="display20">http://localhost:4033/</i></td>
+      </tr>
+      <tr>
+        <td style="text-align: right;"><label>Destination:</label></td>
+        <td><select name="to">
+          <option value='BusportC'>BusportC</option>
+          <option value='BusportG'>BusportG</option>
+          <option value='BusportK'>BusportK</option>
+          <option value='BusportO'>BusportO</option>
+          <option value='BusportS'>BusportS</option>
+          <option value='JunctionB'>JunctionB</option>
+          <option value='JunctionF'>JunctionF</option>
+          <option value='JunctionJ'>JunctionJ</option>
+          <option value='JunctionN'>JunctionN</option>
+          <option value='JunctionR'>JunctionR</option>
+          <option value='StationD'>StationD</option>
+          <option value='StationH'>StationH</option>
+          <option value='StationL'>StationL</option>
+          <option value='StationP'>StationP</option>
+          <option value='StationT'>StationT</option>
+          <option value='TerminalA'>TerminalA</option>
+          <option value='TerminalE'>TerminalE</option>
+          <option value='TerminalI'>TerminalI</option>
+          <option value='TerminalM'>TerminalM</option>
+        </select></td>
+        <td style="padding-left: 3em;"><input type="submit" value=" Let's go! "></td>
+      </tr>
+    </table>
+  </form>
+</div>
+
+<script>
+function updateTime() {
+  var currentTime = new Date();
+  var hours = currentTime.getHours();
+  var minutes = currentTime.getMinutes();
+  minutes = minutes < 10 ? '0' + minutes : minutes;
+  var formattedTime = hours + ':' + minutes;
+  document.getElementById("departureTime").innerText = formattedTime;
+}
+
+function updateIP() {
+  var ipInput = document.getElementById("ipInput").value;
+  if (ipInput) {
+    document.getElementById("form1").action = "http://" + ipInput + ":4005/";
+    document.getElementById("display1").innerText = "http://" + ipInput + ":4005/";
+
+    document.getElementById("form2").action = "http://" + ipInput + ":4013/";
+    document.getElementById("display2").innerText = "http://" + ipInput + ":4013/";
+
+    document.getElementById("form3").action = "http://" + ipInput + ":4021/";
+    document.getElementById("display3").innerText = "http://" + ipInput + ":4021/";
+
+    document.getElementById("form4").action = "http://" + ipInput + ":4029/";
+    document.getElementById("display4").innerText = "http://" + ipInput + ":4029/";
+
+    document.getElementById("form5").action = "http://" + ipInput + ":4037/";
+    document.getElementById("display5").innerText = "http://" + ipInput + ":4037/";
+
+    document.getElementById("form6").action = "http://" + ipInput + ":4003/";
+    document.getElementById("display6").innerText = "http://" + ipInput + ":4003/";
+
+    document.getElementById("form7").action = "http://" + ipInput + ":4011/";
+    document.getElementById("display7").innerText = "http://" + ipInput + ":4011/";
+
+    document.getElementById("form8").action = "http://" + ipInput + ":4019/";
+    document.getElementById("display8").innerText = "http://" + ipInput + ":4019/";
+
+    document.getElementById("form9").action = "http://" + ipInput + ":4027/";
+    document.getElementById("display9").innerText = "http://" + ipInput + ":4027/";
+
+    document.getElementById("form10").action = "http://" + ipInput + ":4035/";
+    document.getElementById("display10").innerText = "http://" + ipInput + ":4035/";
+
+    document.getElementById("form11").action = "http://" + ipInput + ":4007/";
+    document.getElementById("display11").innerText = "http://" + ipInput + ":4007/";
+
+    document.getElementById("form12").action = "http://" + ipInput + ":4015/";
+    document.getElementById("display12").innerText = "http://" + ipInput + ":4015/";
+
+    document.getElementById("form13").action = "http://" + ipInput + ":4023/";
+    document.getElementById("display13").innerText = "http://" + ipInput + ":4023/";
+
+    document.getElementById("form14").action = "http://" + ipInput + ":4031/";
+    document.getElementById("display14").innerText = "http://" + ipInput + ":4031/";
+
+    document.getElementById("form15").action = "http://" + ipInput + ":4039/";
+    document.getElementById("display15").innerText = "http://" + ipInput + ":4039/";
+
+    document.getElementById("form16").action = "http://" + ipInput + ":4001/";
+    document.getElementById("display16").innerText = "http://" + ipInput + ":4001/";
+
+    document.getElementById("form17").action = "http://" + ipInput + ":4009/";
+    document.getElementById("display17").innerText = "http://" + ipInput + ":4009/";
+
+    document.getElementById("form18").action = "http://" + ipInput + ":4017/";
+    document.getElementById("display18").innerText = "http://" + ipInput + ":4017/";
+
+    document.getElementById("form19").action = "http://" + ipInput + ":4025/";
+    document.getElementById("display19").innerText = "http://" + ipInput + ":4025/";
+
+    document.getElementById("form20").action = "http://" + ipInput + ":4033/";
+    document.getElementById("display20").innerText = "http://" + ipInput + ":4033/";
+  }
+}
+
+setInterval(updateTime, 1000);
+</script>
+
+</body>
+</html>

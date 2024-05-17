@@ -20,6 +20,11 @@
 #include <sys/stat.h>
 #include <ifaddrs.h>
 
+//  Harrison Harun | 23347644
+//  Aarif Lamat | 23628374
+//  Enrico Tionandra | 23732436
+//  Nicholas Mulyawan | 23044774
+
 using namespace std;
 
 class NetworkServer {

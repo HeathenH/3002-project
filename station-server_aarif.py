@@ -38,7 +38,7 @@ class NetworkServer(multiprocessing.Process):
         self.station_list_queue = multiprocessing.Queue()  # Queue for station list updates
         self.journey_list_queue = multiprocessing.Queue()
         self.destination = None
-        self.journey = [["odyssey", query_port, "destination"], [station_name], [query_port]]
+        self.journey = [["odyssey", query_port, "destination"], [station_name], [query_port]] 
         self.journey_list = []
         self.temp_list = []
         self.hard_temp = []

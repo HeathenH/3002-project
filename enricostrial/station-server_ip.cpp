@@ -23,9 +23,9 @@ using namespace std;
 
 class NetworkServer {
 public:
-    NetworkServer(string station_name, int browser_port, int query_port, vector<int> adjacent_ports)
-        : station_name(station_name), browser_port(browser_port), query_port(query_port), adjacent_ports(adjacent_ports) {
-        host_ip = "172.20.10.2";
+    NetworkServer(string station_name, int browser_port, int query_port, vector<pair<string, int>> adjacent_servers)
+        : station_name(station_name), browser_port(browser_port), query_port(query_port), adjacent_servers(adjacent_servers) {
+        host_ip = "10.135.223.145";
         timetable_filename = "tt-" + station_name;
         last_modified_time = 0;
         start_time = "9:00";
@@ -68,21 +68,21 @@ public:
         }
 
         cout << "Station Server '" << station_name << "' started. TCP Port: " << browser_port << ", UDP Port: " << query_port << ", Neighbour UDP Ports: ";
-        for (int port : adjacent_ports) {
-            cout << port << " ";
+        for (const auto& server : adjacent_servers) {
+            cout << server.first << ":" << server.second << " ";
         }
         cout << endl;
 
         thread udp_handler(&NetworkServer::handle_udp, this);
         udp_handler.detach();
 
-        while (station_list.size() != adjacent_ports.size()) {
+        while (station_list.size() != adjacent_servers.size()) {
             string query_data = "query_station";
-            for (int port : adjacent_ports) {
+            for (const auto& server : adjacent_servers) {
                 sockaddr_in neighboring_station_addr;
                 neighboring_station_addr.sin_family = AF_INET;
-                neighboring_station_addr.sin_port = htons(port);
-                inet_pton(AF_INET, host_ip.c_str(), &neighboring_station_addr.sin_addr);
+                neighboring_station_addr.sin_port = htons(server.second);
+                inet_pton(AF_INET, server.first.c_str(), &neighboring_station_addr.sin_addr);
                 sendto(udp_socket, query_data.c_str(), query_data.size(), 0, (sockaddr*)&neighboring_station_addr, sizeof(neighboring_station_addr));
                 this_thread::sleep_for(chrono::seconds(1));
             }
@@ -117,7 +117,7 @@ private:
     string station_name;
     int browser_port;
     int query_port;
-    vector<int> adjacent_ports;
+    vector<pair<string, int>> adjacent_servers;
     string host_ip;
     string timetable_filename;
     time_t last_modified_time;
@@ -643,16 +643,19 @@ int main(int argc, char* argv[]) {
     string station_name = argv[1];
     int browser_port = stoi(argv[2]);
     int query_port = stoi(argv[3]);
-    vector<int> adjacent_ports;
+    vector<pair<string, int>> adjacent_servers;
     for (int i = 4; i < argc; ++i) {
-        string port_str = argv[i];
-        size_t pos = port_str.find(':');
+        string addr_port_str = argv[i];
+        size_t pos = addr_port_str.find(':');
         if (pos != string::npos) {
-            adjacent_ports.push_back(stoi(port_str.substr(pos + 1)));
+            // adjacent_ports.push_back(stoi(port_str.substr(pos + 1)));
+            string ip = addr_port_str.substr(0, pos);
+            int port = stoi(addr_port_str.substr(pos + 1));
+            adjacent_servers.emplace_back(ip, port);
         }
     }
 
-    NetworkServer server(station_name, browser_port, query_port, adjacent_ports);
+    NetworkServer server(station_name, browser_port, query_port, adjacent_servers);
     server.run();
 
     return 0;

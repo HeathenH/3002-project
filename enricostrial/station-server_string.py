@@ -25,9 +25,9 @@ class NetworkServer(multiprocessing.Process):
         #### change this to ur pc's IP address. To find ur IP address in Linux type "ifconfig" in ur terminal, if on windows type "ipconfig" on cmd/powershell
         # self.host_ip = "127.0.0.1"
         # Aarif's on Unifi
-        self.host_ip = "10.135.223.145"
+        # self.host_ip = "10.135.223.145"
         ### Aarif's on hotspot ###
-        # self.host_ip = "172.20.10.2"
+        self.host_ip = "172.20.10.2"
         ### Nico's on Unifi
         #self.host_ip = "10.135.102.29"
         # My Hotspot
